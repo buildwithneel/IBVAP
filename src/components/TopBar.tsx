@@ -16,6 +16,13 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
   const [alertsOpen, setAlertsOpen] = useState(false);
   const alertDropRef = useRef<HTMLDivElement>(null);
 
+  const initials = mockOperator.name
+    .split(" ")
+    .filter((w) => w.match(/^[A-Z]/))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
@@ -52,7 +59,7 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
   );
 
   return (
-    <header className="h-14 shrink-0 bg-gov-card border-b border-navy-200 px-4 sm:px-5 flex items-center justify-between gap-4 z-20 shadow-gov">
+    <header className="h-14 shrink-0 bg-gov-card border-b border-navy-200 px-4 sm:px-5 flex items-center justify-between gap-3 z-20 shadow-gov">
       {/* Left: Mobile trigger & Page Title */}
       <div className="flex items-center gap-3 min-w-0">
         {onToggleSidebar && (
@@ -66,10 +73,10 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
         )}
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h1 className="text-[13px] font-bold text-navy-900 truncate tracking-tight leading-tight">
+            <h1 className="text-[13px] font-semibold text-navy-900 truncate tracking-tight leading-tight">
               {title}
             </h1>
-            <span className="hidden sm:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-navy-100 text-navy-600 border border-navy-200 leading-none shrink-0">
+            <span className="hidden sm:inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded bg-navy-100 text-navy-700 border border-navy-200 leading-none shrink-0">
               IBVAP
             </span>
           </div>
@@ -157,17 +164,27 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
           </AnimatePresence>
         </div>
 
-        {/* Security Clearance Tag — interactive trigger */}
+        {/* Canonical User Profile Trigger Button */}
         <button
           type="button"
           onClick={() => openProfile(mockOperator.name)}
-          className="hidden lg:flex items-center gap-1.5 text-navy-600 hover:text-navy-900 bg-navy-50 hover:bg-navy-100 border border-navy-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy-400"
-          title="Click to view officer clearance dossier"
-          aria-label="View operator security clearance dossier"
+          className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-navy-50 hover:bg-navy-100 border border-navy-200 text-navy-900 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-navy-400 group shrink-0"
+          title={`Operator Profile: ${mockOperator.name} (${mockOperator.officerId})`}
+          aria-label={`Open operator profile for ${mockOperator.name}`}
         >
-          <IconShield size={11} className="text-navy-600" />
-          <span className="text-[10px] font-medium font-mono">{mockOperator.clearanceLevel}</span>
+          <div className="w-5 h-5 rounded-md bg-navy-800 border border-navy-700 flex items-center justify-center text-[9px] font-semibold text-white shrink-0 group-hover:bg-navy-900 transition-colors select-none">
+            {initials}
+          </div>
+          <span className="text-xs font-semibold text-navy-900 group-hover:text-blue-700 transition-colors tracking-tight hidden sm:inline">
+            {mockOperator.name}
+          </span>
         </button>
+
+        {/* Security Clearance Tag */}
+        <div className="hidden xl:flex items-center gap-1.5 text-navy-600 bg-navy-50 border border-navy-200 px-2.5 py-1 rounded-lg">
+          <IconShield size={11} className="text-navy-600" />
+          <span className="text-[10px] font-semibold font-mono">{mockOperator.clearanceLevel}</span>
+        </div>
 
         {/* Real-time IST Clock */}
         <div className="flex items-center gap-1.5 font-mono bg-navy-50 border border-navy-200 px-2.5 py-1 rounded-lg">

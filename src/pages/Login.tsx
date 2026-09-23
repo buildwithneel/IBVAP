@@ -159,7 +159,7 @@ export default function Login() {
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
                     placeholder="e.g. SSB-SEC-8421"
-                    className="w-full px-3 py-2.5 text-xs rounded-lg border border-navy-300 bg-white text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors font-mono"
+                    className="w-full px-3 py-2.5 text-xs rounded-lg border border-navy-300 bg-white text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
                     autoComplete="username"
                   />
                 </div>
@@ -205,7 +205,7 @@ export default function Login() {
                   value={terminalPin}
                   onChange={(e) => setTerminalPin(e.target.value)}
                   placeholder="Station PIN"
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-navy-300 bg-white text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors font-mono"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-navy-300 bg-white text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-2 py-2.5 px-4 rounded-lg bg-navy-900 hover:bg-navy-800 active:bg-navy-950 text-white font-medium text-xs tracking-wider uppercase transition-colors flex items-center justify-center gap-2 shadow-sm focus:ring-2 focus:ring-navy-900/40"
+                className="w-full mt-2 py-2.5 px-4 rounded-lg bg-navy-900 hover:bg-navy-800 active:bg-navy-950 text-white font-semibold text-xs tracking-wider uppercase transition-colors flex items-center justify-center gap-2 shadow-sm focus:ring-2 focus:ring-navy-900/40 cursor-pointer"
               >
                 {isLoading ? (
                   <>

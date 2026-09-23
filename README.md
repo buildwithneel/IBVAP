@@ -31,7 +31,7 @@ src/
 
 ## Design notes
 - Palette follows a 60/30/10 split: neutral off-white/white for most of the UI, slate/navy for structure (sidebar, headers, borders), and color reserved strictly for live status and alerts (green = active camera, amber = warning, red = alert/critical).
-- Font is Noto Sans. I couldn't extract the exact font-family mha.gov.in serves (their markup doesn't expose it to a fetch), so this is my closest real match — swap the Google Fonts link in `index.html` and the `fontFamily` entry in `tailwind.config.js` if you confirm the actual one.
+- Font is Inter (`Inter, "Segoe UI", -apple-system, BlinkMacSystemFont, Arial, sans-serif`) with dominant Semi-Bold (600) weight for clear typographic hierarchy.
 - Corners are rounded throughout (`rounded-2xl` on cards/tiles, `rounded-full` on buttons/pills) — no sharp edges anywhere.
 - The only animation is the fade transition between Login and Dashboard, plus a pulse on live/alert indicators — kept deliberate rather than scattered.
 

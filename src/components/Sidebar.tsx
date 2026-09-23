@@ -8,11 +8,8 @@ import {
   IconIntelligence,
   IconLogout,
   IconReports,
-  IconUser,
 } from "./Icons";
 import { IBVAPLogo } from "./EmblemMark";
-import { mockOperator } from "../data/mockData";
-import { useOfficerProfile } from "../context/OfficerProfileContext";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -62,30 +59,14 @@ const navItems = [
     end: false,
     desc: "Anomaly patterns",
   },
-  {
-    label: "User Details",
-    to: "/dashboard/user",
-    icon: IconUser,
-    end: false,
-    desc: "Operator profile",
-  },
 ];
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const navigate = useNavigate();
-  const { openProfile } = useOfficerProfile();
 
   const handleLogout = () => {
     navigate("/");
   };
-
-  // Operator initials
-  const initials = mockOperator.name
-    .split(" ")
-    .filter((w) => w.match(/^[A-Z]/))
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
 
   return (
     <>
@@ -146,31 +127,9 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-1 py-2.5 px-2.5 space-y-0.5 overflow-y-auto" aria-label="Main navigation">
+        <nav className="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto" aria-label="Main navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isUserDetails = item.to === "/dashboard/user";
-            if (isUserDetails) {
-              return (
-                <button
-                  key={item.to}
-                  type="button"
-                  onClick={() => {
-                    openProfile(mockOperator.name);
-                    if (onClose) onClose();
-                  }}
-                  className="group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors duration-150 text-navy-300 hover:bg-navy-800/60 hover:text-navy-100 w-full text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400"
-                  title="Open officer security dossier"
-                >
-                  <Icon
-                    size={15}
-                    className="shrink-0 transition-colors duration-150 text-navy-400 group-hover:text-navy-200"
-                  />
-                  <span className="truncate leading-none">{item.label}</span>
-                </button>
-              );
-            }
-
             return (
               <NavLink
                 key={item.to}
@@ -178,9 +137,9 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 end={item.end}
                 onClick={() => { if (onClose) onClose(); }}
                 className={({ isActive }) =>
-                  `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors duration-150 ${
+                  `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
                     isActive
-                      ? "bg-navy-800 text-white"
+                      ? "bg-navy-800 text-white shadow-sm"
                       : "text-navy-300 hover:bg-navy-800/60 hover:text-navy-100"
                   }`
                 }
@@ -205,7 +164,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom Section */}
+        {/* Bottom Section — System Telemetry & End Session */}
         <div className="border-t border-navy-800/80 bg-navy-950/50 p-2.5 space-y-2 shrink-0">
           {/* Secure connection status */}
           <div className="px-2.5 py-1.5 rounded-lg bg-navy-900/80 border border-navy-800 flex items-center justify-between">
@@ -218,40 +177,16 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="text-[10px] font-mono text-navy-400">38ms</span>
           </div>
 
-          {/* Operator profile trigger — clickable interactive element */}
-          <div className="px-2 py-1 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => {
-                openProfile(mockOperator.name);
-                if (onClose) onClose();
-              }}
-              className="flex items-center gap-2 min-w-0 group p-1 -m-1 rounded-lg hover:bg-navy-800/80 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-colors text-left"
-              title="Click to inspect officer dossier for Insp. Rajesh K. Sharma"
-              aria-label="View user profile for Insp. Rajesh K. Sharma"
-            >
-              <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 group-hover:border-blue-400 group-hover:bg-navy-600 transition-colors">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="text-[11px] font-medium text-white truncate leading-tight group-hover:text-blue-300 group-hover:underline underline-offset-2 transition-colors">
-                  {mockOperator.name}
-                </p>
-                <p className="text-[9px] text-navy-400 font-mono truncate leading-tight">
-                  {mockOperator.officerId}
-                </p>
-              </div>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              title="End terminal session"
-              className="p-1.5 rounded-lg text-navy-400 hover:text-status-critical hover:bg-navy-800 transition-colors shrink-0"
-              aria-label="Logout from terminal"
-            >
-              <IconLogout size={14} />
-            </button>
-          </div>
+          {/* End Terminal Session */}
+          <button
+            onClick={handleLogout}
+            title="End terminal session"
+            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-navy-400 hover:text-status-critical hover:bg-navy-800/80 border border-transparent hover:border-navy-700/80 transition-colors cursor-pointer"
+            aria-label="Logout from terminal"
+          >
+            <IconLogout size={14} />
+            <span>End Session</span>
+          </button>
         </div>
       </aside>
     </>

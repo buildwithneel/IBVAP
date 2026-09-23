@@ -43,7 +43,7 @@ export default {
       },
       fontFamily: {
         sans: [
-          '"Noto Sans"',
+          "Inter",
           '"Segoe UI"',
           "-apple-system",
           "BlinkMacSystemFont",

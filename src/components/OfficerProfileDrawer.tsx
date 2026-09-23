@@ -90,7 +90,7 @@ export default function OfficerProfileDrawer() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-status-live animate-cctv-pulse shrink-0" />
                 <div className="min-w-0">
-                  <h2 className="text-[12px] font-bold uppercase tracking-wider text-navy-900 leading-tight">
+                  <h2 className="text-[12px] font-semibold uppercase tracking-wider text-navy-900 leading-tight">
                     Officer Security Dossier
                   </h2>
                   <p className="text-[10px] text-navy-500 font-mono">
@@ -100,7 +100,7 @@ export default function OfficerProfileDrawer() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[9px] font-mono px-2 py-0.5 rounded font-bold bg-navy-200/80 text-navy-700 uppercase">
+                <span className="text-[9px] px-2 py-0.5 rounded font-semibold bg-navy-200/80 text-navy-700 uppercase">
                   DEMO PROTOTYPE
                 </span>
                 <button
@@ -120,7 +120,7 @@ export default function OfficerProfileDrawer() {
 
             {/* Prototype Notice Banner */}
             <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-[10px] flex items-center gap-2 shrink-0">
-              <span className="font-bold text-amber-800 uppercase shrink-0">Prototype Record</span>
+              <span className="font-semibold text-amber-800 uppercase shrink-0">Prototype Record</span>
               <span className="text-amber-700 leading-tight">
                 Synthetic operational profile for hackathon demonstration. Not an actual government record.
               </span>
@@ -132,13 +132,13 @@ export default function OfficerProfileDrawer() {
               <div className="p-4 rounded-xl bg-navy-900 text-white shadow-gov space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-navy-800 border-2 border-navy-700 flex items-center justify-center text-white text-lg font-bold font-mono shrink-0 shadow-inner select-none">
+                    <div className="w-12 h-12 rounded-xl bg-navy-800 border-2 border-navy-700 flex items-center justify-center text-white text-lg font-semibold shrink-0 shadow-inner select-none">
                       {initials}
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className="text-sm font-bold text-white tracking-tight">{activeOfficer.name}</h3>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+                        <h3 className="text-sm font-semibold text-white tracking-tight">{activeOfficer.name}</h3>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
                           <IconCheckCircle size={10} />
                           {activeOfficer.status?.toUpperCase() || "ACTIVE"}
                         </span>
@@ -169,7 +169,7 @@ export default function OfficerProfileDrawer() {
 
               {/* Core Officer Specification Grid */}
               <div className="bg-navy-50 rounded-xl border border-navy-200 p-3.5 space-y-2.5">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-navy-700 border-b border-navy-200 pb-1.5">
+                <h4 className="text-[10px] font-semibold uppercase tracking-wider text-navy-700 border-b border-navy-200 pb-1.5">
                   Officer Operational Dossier
                 </h4>
 
@@ -251,10 +251,10 @@ export default function OfficerProfileDrawer() {
               {/* Assigned Terminal Capabilities Matrix */}
               <div className="bg-gov-card rounded-xl border border-navy-200 p-4 shadow-gov space-y-2.5">
                 <div className="flex items-center justify-between border-b border-navy-100 pb-2">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-navy-800">
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider text-navy-800">
                     Terminal Capabilities &amp; Permissions
                   </h4>
-                  <span className="text-[9px] font-mono text-navy-500 bg-navy-100 px-1.5 py-0.5 rounded border border-navy-200">
+                  <span className="text-[9px] font-semibold text-navy-600 bg-navy-100 px-1.5 py-0.5 rounded border border-navy-200">
                     {permissions.filter((p) => p.status === "Granted").length} Granted
                   </span>
                 </div>
@@ -296,7 +296,7 @@ export default function OfficerProfileDrawer() {
               {/* Session Activity Log */}
               <div className="bg-gov-card rounded-xl border border-navy-200 overflow-hidden shadow-gov">
                 <div className="px-3.5 py-2 border-b border-navy-200 bg-navy-50 flex items-center justify-between">
-                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-navy-800">
+                  <h4 className="text-[10px] font-semibold uppercase tracking-wider text-navy-800">
                     Shift Activity Log
                   </h4>
                   <span className="text-[9px] font-mono text-navy-500">
