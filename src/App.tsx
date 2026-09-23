@@ -7,10 +7,14 @@ import Cameras from "./pages/Cameras";
 import Reports from "./pages/Reports";
 import Intelligence from "./pages/Intelligence";
 import UserDetails from "./pages/UserDetails";
+import { OfficerProfileProvider } from "./context/OfficerProfileContext";
+import OfficerProfileDrawer from "./components/OfficerProfileDrawer";
 
 export default function App() {
   return (
-    <Routes>
+    <OfficerProfileProvider>
+      <OfficerProfileDrawer />
+      <Routes>
       {/* Wireframe 2 — Login / Entry Portal */}
       <Route path="/" element={<Login />} />
 
@@ -42,5 +46,6 @@ export default function App() {
       {/* Catch-all fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </OfficerProfileProvider>
   );
 }

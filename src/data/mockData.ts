@@ -24,18 +24,272 @@ export const mockSystemMetrics: SystemMetrics = {
   defconLevel: "DEFCON-4 (ROUTINE PATROL)",
 };
 
+export const defaultPermissions = [
+  { label: "Live Optical CCTV Feed Monitoring (All Sectors)", status: "Granted" as const },
+  { label: "Thermal IR Sensor Toggle & Optical Zoom", status: "Granted" as const },
+  { label: "Tripwire Breach Alarm Dispatch & Acknowledgement", status: "Granted" as const },
+  { label: "Incident Dossier Generation & Archival Export", status: "Granted" as const },
+  { label: "Camera Hardware Calibration & RTSP Reset", status: "Requires Supervisor" as const },
+  { label: "Audit Log Deletion / Modification", status: "Restricted" as const },
+];
+
+export const defaultSessionLog = [
+  { time: "07:12:03", action: "Terminal Authentication", status: "OK" as const },
+  { time: "07:12:15", action: "RTSP Stream Handshake — All Sectors", status: "OK" as const },
+  { time: "07:15:48", action: "Tripwire Calibration — Sector 3", status: "OK" as const },
+  { time: "08:22:11", action: "Acknowledged Alert: ALT-2024-4221", status: "ACK" as const },
+  { time: "09:04:37", action: "Incident Dossier Generated: RPT-2024-0004", status: "OK" as const },
+  { time: "09:45:00", action: "Sector 1 Camera Offline — Auto-Diagnostic Triggered", status: "WARN" as const },
+];
+
 export const mockOperator: OperatorProfile = {
   name: "Insp. Rajesh K. Sharma",
   officerId: "SSB-SEC-8421",
+  role: "Surveillance Operations Officer",
   designation: "Control Room Shift In-Charge",
+  organization: "Sashastra Seema Bal (SSB)",
   forceUnit: "Sashastra Seema Bal (SSB) — 48th Bn",
   deploymentStation: "Integrated Checkpost / Sector HQ — North Ridge",
-  clearanceLevel: "Level-3 (Confidential / Surveillance Ops)",
+  clearanceLevel: "Level-3 / Confidential",
+  status: "Active",
+  assignment: "Border Surveillance Operations",
+  sessionStatus: "Active",
+  lastActivity: "Current session (09:45 IST)",
   activeSessionIp: "10.142.8.54 [Encrypted Intranet]",
   loginTime: "06:00 HRS (Shift Alpha)",
   lastAuditDate: "2026-09-22 18:30 IST",
   contactExtension: "EXT-4102",
+  permissions: defaultPermissions,
+  sessionLog: defaultSessionLog,
 };
+
+export const mockOfficers: Record<string, OperatorProfile> = {
+  "rajesh sharma": mockOperator,
+  "insp. rajesh k. sharma": mockOperator,
+  "insp. rajesh k. sharma (ssb)": mockOperator,
+  "p. sengupta": {
+    name: "Sub-Maj. P. Sengupta",
+    officerId: "SSB-SIG-6219",
+    role: "Signals & Communications Superintendent",
+    designation: "Senior Signals & Telemetry Lead",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "Signals & Telemetry Wing — Sector 2",
+    deploymentStation: "Riverine Post BP-107/R Telemetry Center",
+    clearanceLevel: "Level-3 / Confidential",
+    status: "Active",
+    assignment: "Border Telecommunications & RTSP Relay",
+    sessionStatus: "Active",
+    lastActivity: "Optical link telemetry resync (15:20 IST)",
+    activeSessionIp: "10.142.9.22 [Encrypted Intranet]",
+    loginTime: "05:30 HRS (Shift Alpha)",
+    lastAuditDate: "2026-09-21 16:00 IST",
+    contactExtension: "EXT-4119",
+    permissions: [
+      { label: "Live Optical CCTV Feed Monitoring (All Sectors)", status: "Granted" as const },
+      { label: "RTSP Stream Relay & Signal Routing", status: "Granted" as const },
+      { label: "Hardware Diagnostic & Network Reset", status: "Granted" as const },
+      { label: "Incident Dossier Generation & Archival Export", status: "Granted" as const },
+      { label: "Encryption Key Re-generation", status: "Requires Supervisor" as const },
+      { label: "Audit Log Deletion / Modification", status: "Restricted" as const },
+    ],
+    sessionLog: [
+      { time: "05:30:11", action: "Signals Terminal Authentication", status: "OK" as const },
+      { time: "06:00:24", action: "RF Mast Telemetry Handshake", status: "OK" as const },
+      { time: "15:10:45", action: "Diagnostic Report: Sector 2 Optical Line", status: "WARN" as const },
+      { time: "15:20:00", action: "Secondary Redundant Link Activated", status: "OK" as const },
+    ],
+  },
+  "sub-maj. p. sengupta": {
+    name: "Sub-Maj. P. Sengupta",
+    officerId: "SSB-SIG-6219",
+    role: "Signals & Communications Superintendent",
+    designation: "Senior Signals & Telemetry Lead",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "Signals & Telemetry Wing — Sector 2",
+    deploymentStation: "Riverine Post BP-107/R Telemetry Center",
+    clearanceLevel: "Level-3 / Confidential",
+    status: "Active",
+    assignment: "Border Telecommunications & RTSP Relay",
+    sessionStatus: "Active",
+    lastActivity: "Optical link telemetry resync (15:20 IST)",
+    activeSessionIp: "10.142.9.22 [Encrypted Intranet]",
+    loginTime: "05:30 HRS (Shift Alpha)",
+    lastAuditDate: "2026-09-21 16:00 IST",
+    contactExtension: "EXT-4119",
+  },
+  "sub-maj. p. sengupta (signals)": {
+    name: "Sub-Maj. P. Sengupta",
+    officerId: "SSB-SIG-6219",
+    role: "Signals & Communications Superintendent",
+    designation: "Senior Signals & Telemetry Lead",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "Signals & Telemetry Wing — Sector 2",
+    deploymentStation: "Riverine Post BP-107/R Telemetry Center",
+    clearanceLevel: "Level-3 / Confidential",
+    status: "Active",
+    assignment: "Border Telecommunications & RTSP Relay",
+    sessionStatus: "Active",
+    lastActivity: "Optical link telemetry resync (15:20 IST)",
+    activeSessionIp: "10.142.9.22 [Encrypted Intranet]",
+    loginTime: "05:30 HRS (Shift Alpha)",
+    lastAuditDate: "2026-09-21 16:00 IST",
+    contactExtension: "EXT-4119",
+  },
+  "r. minhas": {
+    name: "Insp. R. Minhas",
+    officerId: "SSB-PAT-4409",
+    role: "Rapid Response Sector Commander",
+    designation: "QRT Unit Field Commander",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "48th Bn Tactical Quick Reaction Team",
+    deploymentStation: "Forest Trail Outpost BP-112/F",
+    clearanceLevel: "Level-2 / Restricted",
+    status: "On Duty (Patrol)",
+    assignment: "Perimeter Foot Patrol & Tripwire Verification",
+    sessionStatus: "Field Radio Active",
+    lastActivity: "Incident report filed (06:15 IST)",
+    activeSessionIp: "10.142.14.88 [Field Gateway]",
+    loginTime: "22:00 HRS (Night Watch Bravo)",
+    lastAuditDate: "2026-09-20 14:00 IST",
+    contactExtension: "EXT-4209",
+    permissions: [
+      { label: "Live Optical CCTV Feed Monitoring (Sector 3)", status: "Granted" as const },
+      { label: "Thermal IR Sensor Field View Access", status: "Granted" as const },
+      { label: "QRT Dispatch & Tactical Status Update", status: "Granted" as const },
+      { label: "Incident Field Dossier Submission", status: "Granted" as const },
+      { label: "RTSP Gateway Parameter Reconfiguration", status: "Requires Supervisor" as const },
+      { label: "Audit Log Deletion / Modification", status: "Restricted" as const },
+    ],
+    sessionLog: [
+      { time: "22:00:00", action: "QRT Field Terminal Login", status: "OK" as const },
+      { time: "23:45:10", action: "Thermal Signature Anomaly Verification", status: "ACK" as const },
+      { time: "06:15:00", action: "Incident Dossier Filed: RPT-2024-0003", status: "OK" as const },
+    ],
+  },
+  "insp. r. minhas": {
+    name: "Insp. R. Minhas",
+    officerId: "SSB-PAT-4409",
+    role: "Rapid Response Sector Commander",
+    designation: "QRT Unit Field Commander",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "48th Bn Tactical Quick Reaction Team",
+    deploymentStation: "Forest Trail Outpost BP-112/F",
+    clearanceLevel: "Level-2 / Restricted",
+    status: "On Duty (Patrol)",
+    assignment: "Perimeter Foot Patrol & Tripwire Verification",
+    sessionStatus: "Field Radio Active",
+    lastActivity: "Incident report filed (06:15 IST)",
+    activeSessionIp: "10.142.14.88 [Field Gateway]",
+    loginTime: "22:00 HRS (Night Watch Bravo)",
+    lastAuditDate: "2026-09-20 14:00 IST",
+    contactExtension: "EXT-4209",
+  },
+  "insp. r. minhas (48 bn)": {
+    name: "Insp. R. Minhas",
+    officerId: "SSB-PAT-4409",
+    role: "Rapid Response Sector Commander",
+    designation: "QRT Unit Field Commander",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "48th Bn Tactical Quick Reaction Team",
+    deploymentStation: "Forest Trail Outpost BP-112/F",
+    clearanceLevel: "Level-2 / Restricted",
+    status: "On Duty (Patrol)",
+    assignment: "Perimeter Foot Patrol & Tripwire Verification",
+    sessionStatus: "Field Radio Active",
+    lastActivity: "Incident report filed (06:15 IST)",
+    activeSessionIp: "10.142.14.88 [Field Gateway]",
+    loginTime: "22:00 HRS (Night Watch Bravo)",
+    lastAuditDate: "2026-09-20 14:00 IST",
+    contactExtension: "EXT-4209",
+  },
+  "control room shift ops": {
+    name: "Control Room Shift Ops",
+    officerId: "SSB-OPS-0012",
+    role: "Central Command Duty Desk",
+    designation: "Watch Operations & Multi-Sector Desk",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "Central Sector Monitoring Command",
+    deploymentStation: "Sector Alpha Central Operations Room",
+    clearanceLevel: "Level-3 / Confidential",
+    status: "Active (Multi-Operator)",
+    assignment: "24x7 Multi-Feed Surveillance Watch",
+    sessionStatus: "Active Continuous",
+    lastActivity: "Daily sector audit report filed (07:00 IST)",
+    activeSessionIp: "10.142.8.01 [Command Core]",
+    loginTime: "00:00 HRS (Continuous 24h Rotation)",
+    lastAuditDate: "2026-09-23 00:00 IST",
+    contactExtension: "EXT-4000",
+    permissions: [
+      { label: "Full Spectrum Command CCTV Monitoring", status: "Granted" as const },
+      { label: "Multi-Sector Alert Broadcast & Override", status: "Granted" as const },
+      { label: "Tripwire Breach Dispatch to All Sectors", status: "Granted" as const },
+      { label: "Daily Shift Log Archival & Generation", status: "Granted" as const },
+      { label: "System-Wide DEFCON Escalation", status: "Requires Supervisor" as const },
+      { label: "Audit Log Deletion / Modification", status: "Restricted" as const },
+    ],
+    sessionLog: [
+      { time: "00:00:00", action: "Shift Rotation Handover", status: "OK" as const },
+      { time: "04:30:00", action: "Sector Alpha to Delta Perimeter Sweep", status: "OK" as const },
+      { time: "07:00:00", action: "Daily Audit Published: RPT-2024-0001", status: "OK" as const },
+    ],
+  },
+};
+
+/**
+ * Returns the OperatorProfile matching the specified name, or automatically synthesizes
+ * a realistic SSB operator profile for any arbitrary officer name.
+ */
+export function getOfficerProfile(nameOrQuery: string): OperatorProfile {
+  if (!nameOrQuery) return mockOperator;
+
+  const normalized = nameOrQuery.toLowerCase().trim();
+
+  // Direct lookup
+  if (mockOfficers[normalized]) {
+    return mockOfficers[normalized];
+  }
+
+  // Partial substring match
+  for (const [key, profile] of Object.entries(mockOfficers)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return profile;
+    }
+  }
+
+  // Strip parenthetical designations like "(SSB)" or "(Signals)"
+  const cleanName = nameOrQuery.replace(/\s*\([^)]*\)/g, "").trim();
+  const cleanNormalized = cleanName.toLowerCase();
+  for (const [key, profile] of Object.entries(mockOfficers)) {
+    if (cleanNormalized.includes(key) || key.includes(cleanNormalized)) {
+      return profile;
+    }
+  }
+
+  // Dynamic fallback for any unseen officer name
+  const hash = cleanName.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const generatedId = `SSB-SEC-${(8000 + (hash % 1900)).toString()}`;
+
+  return {
+    name: cleanName,
+    officerId: generatedId,
+    role: "Surveillance Operations Officer",
+    designation: "Field Operations Officer",
+    organization: "Sashastra Seema Bal (SSB)",
+    forceUnit: "Sashastra Seema Bal (SSB) — Border Wing",
+    deploymentStation: "Sector Alpha Command Terminal",
+    clearanceLevel: "Level-3 / Confidential",
+    status: "Active",
+    assignment: "Border Surveillance Operations",
+    sessionStatus: "Active",
+    lastActivity: "Current session",
+    activeSessionIp: `10.142.8.${(hash % 200) + 10} [Encrypted Intranet]`,
+    loginTime: "06:00 HRS (Shift Alpha)",
+    lastAuditDate: "2026-09-22 18:30 IST",
+    contactExtension: `EXT-${4000 + (hash % 500)}`,
+    permissions: defaultPermissions,
+    sessionLog: defaultSessionLog,
+  };
+}
 
 export const mockCameras: Camera[] = [
   {

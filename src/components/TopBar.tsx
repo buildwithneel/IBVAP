@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { IconMenu, IconShield } from "./Icons";
 import { mockAlerts, mockOperator, mockSystemMetrics } from "../data/mockData";
 import { AnimatePresence, motion } from "framer-motion";
+import { useOfficerProfile } from "../context/OfficerProfileContext";
 
 interface TopBarProps {
   title: string;
@@ -10,6 +11,7 @@ interface TopBarProps {
 }
 
 export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps) {
+  const { openProfile } = useOfficerProfile();
   const [now, setNow] = useState(new Date());
   const [alertsOpen, setAlertsOpen] = useState(false);
   const alertDropRef = useRef<HTMLDivElement>(null);
@@ -155,11 +157,17 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
           </AnimatePresence>
         </div>
 
-        {/* Security Clearance Tag */}
-        <div className="hidden lg:flex items-center gap-1.5 text-navy-600 bg-navy-50 border border-navy-200 px-2.5 py-1 rounded-lg">
+        {/* Security Clearance Tag — interactive trigger */}
+        <button
+          type="button"
+          onClick={() => openProfile(mockOperator.name)}
+          className="hidden lg:flex items-center gap-1.5 text-navy-600 hover:text-navy-900 bg-navy-50 hover:bg-navy-100 border border-navy-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy-400"
+          title="Click to view officer clearance dossier"
+          aria-label="View operator security clearance dossier"
+        >
           <IconShield size={11} className="text-navy-600" />
           <span className="text-[10px] font-medium font-mono">{mockOperator.clearanceLevel}</span>
-        </div>
+        </button>
 
         {/* Real-time IST Clock */}
         <div className="flex items-center gap-1.5 font-mono bg-navy-50 border border-navy-200 px-2.5 py-1 rounded-lg">

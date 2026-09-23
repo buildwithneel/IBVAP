@@ -12,6 +12,7 @@ import {
 } from "./Icons";
 import { IBVAPLogo } from "./EmblemMark";
 import { mockOperator } from "../data/mockData";
+import { useOfficerProfile } from "../context/OfficerProfileContext";
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -72,6 +73,7 @@ const navItems = [
 
 export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
   const navigate = useNavigate();
+  const { openProfile } = useOfficerProfile();
 
   const handleLogout = () => {
     navigate("/");
@@ -147,6 +149,28 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         <nav className="flex-1 py-2.5 px-2.5 space-y-0.5 overflow-y-auto" aria-label="Main navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
+            const isUserDetails = item.to === "/dashboard/user";
+            if (isUserDetails) {
+              return (
+                <button
+                  key={item.to}
+                  type="button"
+                  onClick={() => {
+                    openProfile(mockOperator.name);
+                    if (onClose) onClose();
+                  }}
+                  className="group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors duration-150 text-navy-300 hover:bg-navy-800/60 hover:text-navy-100 w-full text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  title="Open officer security dossier"
+                >
+                  <Icon
+                    size={15}
+                    className="shrink-0 transition-colors duration-150 text-navy-400 group-hover:text-navy-200"
+                  />
+                  <span className="truncate leading-none">{item.label}</span>
+                </button>
+              );
+            }
+
             return (
               <NavLink
                 key={item.to}
@@ -194,25 +218,30 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="text-[10px] font-mono text-navy-400">38ms</span>
           </div>
 
-          {/* Operator profile */}
+          {/* Operator profile trigger — clickable interactive element */}
           <div className="px-2 py-1 flex items-center justify-between">
-            <NavLink
-              to="/dashboard/user"
-              className="flex items-center gap-2 min-w-0 group"
-              title="View operator profile"
+            <button
+              type="button"
+              onClick={() => {
+                openProfile(mockOperator.name);
+                if (onClose) onClose();
+              }}
+              className="flex items-center gap-2 min-w-0 group p-1 -m-1 rounded-lg hover:bg-navy-800/80 focus:outline-none focus:ring-2 focus:ring-blue-400 cursor-pointer transition-colors text-left"
+              title="Click to inspect officer dossier for Insp. Rajesh K. Sharma"
+              aria-label="View user profile for Insp. Rajesh K. Sharma"
             >
-              <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 group-hover:border-navy-500 transition-colors">
+              <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 group-hover:border-blue-400 group-hover:bg-navy-600 transition-colors">
                 {initials}
               </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-medium text-white truncate leading-tight group-hover:text-navy-100">
+                <p className="text-[11px] font-medium text-white truncate leading-tight group-hover:text-blue-300 group-hover:underline underline-offset-2 transition-colors">
                   {mockOperator.name}
                 </p>
                 <p className="text-[9px] text-navy-400 font-mono truncate leading-tight">
                   {mockOperator.officerId}
                 </p>
               </div>
-            </NavLink>
+            </button>
 
             <button
               onClick={handleLogout}

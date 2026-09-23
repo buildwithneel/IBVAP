@@ -6,6 +6,7 @@ import { IconDownload, IconFilter } from "../components/Icons";
 import StatusBadge from "../components/StatusBadge";
 import Modal from "../components/Modal";
 import EmptyState from "../components/EmptyState";
+import OfficerTrigger from "../components/OfficerTrigger";
 
 export default function Reports() {
   const [reports] = useState<IncidentReport[]>(mockReports);
@@ -140,7 +141,7 @@ export default function Reports() {
                         {report.incidentDate}
                       </td>
                       <td className="py-3 px-4 text-navy-600 whitespace-nowrap">
-                        {report.reportingOfficer}
+                        <OfficerTrigger name={report.reportingOfficer} />
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
                         <StatusBadge status={report.status as any} />
@@ -194,13 +195,17 @@ export default function Reports() {
                 { label: "Sector", value: selectedReport.sector },
                 { label: "Incident Date", value: selectedReport.incidentDate, mono: true },
                 { label: "Generated At", value: selectedReport.generatedAt, mono: true },
-                { label: "Reporting Officer", value: selectedReport.reportingOfficer },
+                { label: "Reporting Officer", value: selectedReport.reportingOfficer, isOfficer: true },
                 { label: "Status", value: selectedReport.status },
                 { label: "AI Detections", value: `${selectedReport.detectionsCount} Objects Logged`, mono: true },
-              ].map(({ label, value, mono }) => (
+              ].map(({ label, value, mono, isOfficer }) => (
                 <div key={label}>
                   <span className="text-[10px] text-navy-400 uppercase font-medium block mb-0.5">{label}</span>
-                  <span className={`font-semibold text-navy-900 ${mono ? "font-mono text-[11px]" : ""}`}>{value}</span>
+                  {isOfficer ? (
+                    <OfficerTrigger name={value} className="text-navy-900 font-semibold text-xs" />
+                  ) : (
+                    <span className={`font-semibold text-navy-900 ${mono ? "font-mono text-[11px]" : ""}`}>{value}</span>
+                  )}
                 </div>
               ))}
             </div>

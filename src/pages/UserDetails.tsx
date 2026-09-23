@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { mockOperator } from "../data/mockData";
 import { IconCheckCircle, IconShield } from "../components/Icons";
@@ -28,12 +29,25 @@ const sessionLog = [
 ];
 
 export default function UserDetails() {
+  const navigate = useNavigate();
+
   return (
     <Layout
       title="Operator Security Dossier & Terminal Profile"
       subtitle="Officer Verification, Role Permissions & Cryptographic Terminal Access Audit"
     >
       <div className="max-w-4xl mx-auto space-y-5 animate-page-enter">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-100 hover:bg-navy-200 text-navy-700 text-xs font-semibold transition-colors cursor-pointer"
+          >
+            ← Return to Command Dashboard
+          </button>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-800 border border-amber-500/20 font-bold uppercase">
+            Synthetic Prototype Record
+          </span>
+        </div>
         {/* Main Officer ID Card */}
         <div className="bg-gov-card rounded-xl border border-navy-200 p-6 shadow-gov overflow-hidden relative">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-navy-200 pb-6">

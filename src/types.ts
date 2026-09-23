@@ -88,13 +88,21 @@ export interface OperatorProfile {
   name: string;
   officerId: string;
   designation: string;
+  role?: string;
+  organization?: string;
   forceUnit: string;
   deploymentStation: string;
   clearanceLevel: string;
+  status?: string;
+  assignment?: string;
+  sessionStatus?: string;
+  lastActivity?: string;
   activeSessionIp: string;
   loginTime: string;
   lastAuditDate: string;
   contactExtension: string;
+  permissions?: { label: string; status: "Granted" | "Requires Supervisor" | "Restricted" }[];
+  sessionLog?: { time: string; action: string; status: "OK" | "ACK" | "WARN" }[];
 }
 
 export interface SystemMetrics {
