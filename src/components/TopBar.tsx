@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { IconMenu, IconShield } from "./Icons";
-import { mockAlerts, mockOperator, mockSystemMetrics } from "../data/mockData";
+import { mockAlerts, mockOperator } from "../data/mockData";
 import { AnimatePresence, motion } from "framer-motion";
 import { useOfficerProfile } from "../context/OfficerProfileContext";
+import { useWebSocketStatus } from "../services/websocket";
 
 interface TopBarProps {
   title: string;
@@ -12,6 +13,7 @@ interface TopBarProps {
 
 export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps) {
   const { openProfile } = useOfficerProfile();
+  const wsStatus = useWebSocketStatus();
   const [now, setNow] = useState(new Date());
   const [alertsOpen, setAlertsOpen] = useState(false);
   const alertDropRef = useRef<HTMLDivElement>(null);
@@ -90,11 +92,38 @@ export default function TopBar({ title, subtitle, onToggleSidebar }: TopBarProps
 
       {/* Right: Operational Status / Alerts / Clearance / Clock */}
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        {/* Operational Status */}
-        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-status-liveBg text-status-live border border-status-live/30 font-semibold">
-          <span className="w-1.5 h-1.5 rounded-full bg-status-live animate-cctv-pulse" />
+        {/* Operational Status / WebSocket Indicator */}
+        <div
+          title={
+            wsStatus === "connected"
+              ? "Live WebSocket connected — Real-time event stream active"
+              : wsStatus === "connecting"
+              ? "Connecting to live surveillance WebSocket..."
+              : "WebSocket stream offline — Operating on cached telemetry"
+          }
+          className={`hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold border transition-colors ${
+            wsStatus === "connected"
+              ? "bg-status-liveBg text-status-live border-status-live/30"
+              : wsStatus === "connecting"
+              ? "bg-status-warnBg text-status-warn border-status-warn/30"
+              : "bg-navy-100 text-navy-500 border-navy-300"
+          }`}
+        >
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              wsStatus === "connected"
+                ? "bg-status-live animate-cctv-pulse"
+                : wsStatus === "connecting"
+                ? "bg-status-warn animate-pulse"
+                : "bg-navy-400"
+            }`}
+          />
           <span className="text-[10px] uppercase tracking-wide font-mono">
-            {mockSystemMetrics.operationalStatus}
+            {wsStatus === "connected"
+              ? "WS: LIVE STREAM"
+              : wsStatus === "connecting"
+              ? "WS: CONNECTING"
+              : "WS: OFFLINE"}
           </span>
         </div>
 

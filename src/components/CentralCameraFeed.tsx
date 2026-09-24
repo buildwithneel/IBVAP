@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Camera } from "../types";
 import { mockBoundingBoxes, mockCameras } from "../data/mockData";
 import { IconCamera, IconRadioWaves } from "./Icons";
+import { api } from "../services/api";
 
 interface CentralCameraFeedProps {
   initialCameraId?: string;
@@ -12,13 +13,40 @@ export default function CentralCameraFeed({
   initialCameraId = "cam-01",
   onCameraSelect,
 }: CentralCameraFeedProps) {
+  const [cameraList, setCameraList] = useState<Camera[]>(mockCameras);
   const [selectedCamId, setSelectedCamId] = useState(initialCameraId);
   const [showOverlays, setShowOverlays] = useState(true);
   const [sensorMode, setSensorMode] = useState<"optical" | "thermal">("optical");
   const [timestamp, setTimestamp] = useState("");
+  const [streamOnline, setStreamOnline] = useState(false);
+
+  useEffect(() => {
+    setStreamOnline(false);
+  }, [selectedCamId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadCams() {
+      try {
+        const cams = await api.getCameras();
+        if (isMounted && cams && cams.length > 0) {
+          setCameraList(cams);
+          if (!cams.some((c) => c.id === selectedCamId)) {
+            setSelectedCamId(cams[0].id);
+          }
+        }
+      } catch (e) {
+        console.warn("Using fallback cameras for central feed:", e);
+      }
+    }
+    loadCams();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedCamId]);
 
   const activeCamera =
-    mockCameras.find((c) => c.id === selectedCamId) || mockCameras[0];
+    cameraList.find((c) => c.id === selectedCamId) || cameraList[0] || mockCameras[0];
   const boundingBoxes = mockBoundingBoxes[activeCamera.id] || [];
 
   useEffect(() => {
@@ -65,7 +93,7 @@ export default function CentralCameraFeed({
 
         {/* Quick Camera Selector Pills */}
         <div className="flex items-center gap-1 overflow-x-auto py-0.5">
-          {mockCameras.slice(0, 4).map((cam) => (
+          {cameraList.slice(0, 4).map((cam) => (
             <button
               key={cam.id}
               onClick={() => handleSelect(cam)}
@@ -83,12 +111,28 @@ export default function CentralCameraFeed({
 
       {/* Main CCTV Viewport Panel */}
       <div className="relative aspect-video sm:aspect-[16/9] w-full bg-navy-950 overflow-hidden select-none">
-        {/* Realistic CCTV Background Canvas Simulation */}
+        {/* Real Backend MJPEG Video Stream Source */}
+        {activeCamera.status !== "OFFLINE" && (
+          <img
+            key={activeCamera.id}
+            src={api.getMjpegStreamUrl(activeCamera.id)}
+            alt={`Live stream from ${activeCamera.name}`}
+            className={`absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-300 ${
+              streamOnline ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+            onError={() => setStreamOnline(false)}
+            onLoad={() => setStreamOnline(true)}
+          />
+        )}
+
+        {/* Realistic CCTV Background Canvas Simulation (Fallback when stream offline or loading) */}
         <div
           className={`absolute inset-0 transition-opacity duration-300 ${
-            sensorMode === "thermal"
-              ? "bg-gradient-to-tr from-slate-900 via-indigo-950 to-amber-950/40"
-              : "bg-gradient-to-b from-navy-900 via-slate-900 to-navy-950"
+            streamOnline
+              ? "opacity-0 pointer-events-none"
+              : sensorMode === "thermal"
+              ? "opacity-100 bg-gradient-to-tr from-slate-900 via-indigo-950 to-amber-950/40"
+              : "opacity-100 bg-gradient-to-b from-navy-900 via-slate-900 to-navy-950"
           }`}
         >
           {/* Subtle surveillance scanline & grid texture */}

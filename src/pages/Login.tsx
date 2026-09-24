@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { IndiaGovEmblem, SSBEmblem, TricolorBar } from "../components/GovernmentEmblems";
 import { IconAlertTriangle, IconShield } from "../components/Icons";
+import { api } from "../services/api";
 import logoImg from "../assets/ibvap-logo-transparent.png";
 import heroImg from "../assets/border_surveillance_hero.jpg";
 
@@ -17,7 +18,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!loginId.trim() || !password.trim()) {
       setError("Please provide both Login ID / Email and Security Password.");
@@ -26,11 +27,18 @@ export default function Login() {
     setError("");
     setIsLoading(true);
 
-    // Realistic simulated government authentication handshake
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      await api.login({
+        badgeOrEmail: loginId.trim(),
+        password: password.trim(),
+        role: "Operator",
+      });
       navigate("/dashboard");
-    }, 450);
+    } catch (err: any) {
+      setError(err?.message || "Authentication failed. Please verify credentials with Command Desk.");
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   function handleGoogleSSO() {

@@ -1,7 +1,10 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { mockOperator } from "../data/mockData";
 import { IconCheckCircle, IconShield } from "../components/Icons";
+import { AuditRecord, AuditVerificationResponse } from "../types";
+import { api } from "../services/api";
 
 const initials = mockOperator.name
   .split(" ")
@@ -19,17 +22,41 @@ const permissions = [
   { label: "Audit Log Deletion / Modification", status: "Restricted (Level-4 Only)" },
 ];
 
-const sessionLog = [
-  { time: "07:12:03", action: "Terminal Authentication", status: "OK" },
-  { time: "07:12:15", action: "RTSP Stream Handshake — All Sectors", status: "OK" },
-  { time: "07:15:48", action: "Tripwire Calibration — Sector 3", status: "OK" },
-  { time: "08:22:11", action: "Acknowledged Alert: ALT-2024-4221", status: "ACK" },
-  { time: "09:04:37", action: "Incident Dossier Generated: RPT-2024-0004", status: "OK" },
-  { time: "09:45:00", action: "Sector 1 Camera Offline — Auto-Diagnostic Triggered", status: "WARN" },
-];
-
 export default function UserDetails() {
   const navigate = useNavigate();
+
+  // Audit state
+  const [auditLogs, setAuditLogs] = useState<AuditRecord[]>([]);
+  const [verificationData, setVerificationData] = useState<AuditVerificationResponse | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAudit() {
+      try {
+        const logs = await api.getAuditLogs();
+        if (isMounted) setAuditLogs(logs);
+      } catch (e) {
+        console.warn("Using fallback audit log:", e);
+      }
+    }
+    loadAudit();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleVerifyAuditChain = async () => {
+    setIsVerifying(true);
+    try {
+      const res = await api.verifyAuditChain();
+      setVerificationData(res);
+    } catch (e) {
+      console.warn("Failed to verify audit chain:", e);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <Layout
@@ -48,6 +75,7 @@ export default function UserDetails() {
             Synthetic Prototype Record
           </span>
         </div>
+
         {/* Main Officer ID Card */}
         <div className="bg-gov-card rounded-xl border border-navy-200 p-6 shadow-gov overflow-hidden relative">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-navy-200 pb-6">
@@ -146,33 +174,113 @@ export default function UserDetails() {
           </div>
         </div>
 
-        {/* Session Activity Log */}
+        {/* Upgraded Session Activity & Audit Ledger Section */}
         <div className="bg-gov-card rounded-xl border border-navy-200 overflow-hidden shadow-gov">
-          <div className="px-4 py-3 border-b border-navy-200 bg-navy-50 flex items-center justify-between">
+          {/* Card Header with compact Verify Audit Chain action */}
+          <div className="px-4 py-3 border-b border-navy-200 bg-navy-50 flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-[11px] font-bold uppercase tracking-wider text-navy-700">
-              Current Session Activity Log
+              Current Session Activity &amp; Audit Log
             </h3>
-            <span className="text-[10px] font-mono text-navy-400 bg-navy-100 px-2 py-0.5 rounded border border-navy-200">
-              Duty: {mockOperator.loginTime}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-navy-400 bg-navy-100 px-2 py-0.5 rounded border border-navy-200">
+                Duty: {mockOperator.loginTime}
+              </span>
+              <button
+                type="button"
+                onClick={handleVerifyAuditChain}
+                disabled={isVerifying}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-navy-900 hover:bg-navy-800 disabled:opacity-50 text-white text-[10px] font-semibold transition-colors shadow-xs"
+                title="Verify cryptographic SHA-256 audit ledger chain"
+              >
+                <IconShield size={11} />
+                {isVerifying ? "Verifying..." : "Verify Audit Chain"}
+              </button>
+            </div>
           </div>
 
-          <div className="divide-y divide-navy-100">
-            {sessionLog.map((entry, idx) => (
-              <div key={idx} className="px-4 py-2 flex items-center justify-between gap-3 text-xs hover:bg-navy-50/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-navy-400 text-[10px] shrink-0">{entry.time}</span>
-                  <span className="text-navy-700">{entry.action}</span>
-                </div>
-                <span className={`shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
-                  entry.status === "OK"
-                    ? "bg-status-liveBg text-status-live"
-                    : entry.status === "ACK"
-                    ? "bg-status-infoBg text-status-info"
-                    : "bg-status-warnBg text-status-warn"
-                }`}>
-                  {entry.status}
+          {/* Verification Report Display Strip */}
+          {verificationData && (
+            <div className="px-4 py-2.5 bg-status-liveBg/50 border-b border-status-live/30 flex flex-wrap items-center justify-between gap-2 text-xs animate-fadeIn">
+              <div className="flex items-center gap-2 flex-wrap">
+                <IconCheckCircle size={14} className="text-status-live shrink-0" />
+                <span className="font-bold text-navy-900 text-[11px]">
+                  {verificationData.valid ? "CHAIN VALID · TAMPER-EVIDENT" : "CHAIN COMPROMISED"}
                 </span>
+                <span className="text-navy-300">|</span>
+                <span className="text-[10px] font-mono text-navy-600">
+                  Records Checked: {verificationData.records_checked}
+                </span>
+                <span className="text-navy-300">|</span>
+                <span
+                  className="text-[10px] font-mono text-navy-600 truncate max-w-[200px]"
+                  title={`Latest Block Hash: ${verificationData.latest_hash}`}
+                >
+                  Latest Hash: {verificationData.latest_hash.slice(0, 16)}…
+                </span>
+                {verificationData.errors && verificationData.errors.length > 0 && (
+                  <span className="text-[10px] font-mono text-status-critical font-bold">
+                    ({verificationData.errors.join(", ")})
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setVerificationData(null)}
+                className="text-navy-400 hover:text-navy-700 text-xs px-1 font-bold"
+                aria-label="Dismiss verification banner"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {/* Activity List accommodating sequence, timestamp, action, operator, status, and truncated record hash */}
+          <div className="divide-y divide-navy-100">
+            {auditLogs.map((entry, idx) => (
+              <div
+                key={entry.id || idx}
+                className="px-4 py-2 flex items-center justify-between gap-3 text-xs hover:bg-navy-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {/* Sequence */}
+                  <span className="font-mono text-navy-400 text-[10px] w-6 shrink-0">
+                    #{entry.sequence.toString().padStart(2, "0")}
+                  </span>
+                  {/* Timestamp */}
+                  <span className="font-mono text-navy-500 text-[10px] shrink-0">
+                    {entry.timestamp}
+                  </span>
+                  {/* Action & Operator Tag */}
+                  <div className="min-w-0 flex items-center gap-2">
+                    <span className="text-navy-800 text-[11px] font-medium truncate">
+                      {entry.action}
+                    </span>
+                    <span className="text-[9px] text-navy-500 font-mono hidden sm:inline px-1 py-0.5 rounded bg-navy-100/70 border border-navy-200 shrink-0">
+                      {entry.operator}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Truncated Record Hash & Status Badge */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <span
+                    className="font-mono text-[9px] text-navy-400 hidden md:inline px-1.5 py-0.5 rounded bg-navy-100 border border-navy-200"
+                    title={`Cryptographic Record Hash: ${entry.record_hash}`}
+                  >
+                    {entry.record_hash.slice(0, 10)}…
+                  </span>
+                  <span
+                    className={`shrink-0 text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      entry.status === "OK" || entry.status === "SUCCESS"
+                        ? "bg-status-liveBg text-status-live"
+                        : entry.status === "ACK"
+                        ? "bg-status-infoBg text-status-info"
+                        : "bg-status-warnBg text-status-warn"
+                    }`}
+                  >
+                    {entry.status}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

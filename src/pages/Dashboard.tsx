@@ -1,13 +1,46 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 import StatsStrip from "../components/StatsStrip";
 import CentralCameraFeed from "../components/CentralCameraFeed";
 import OperationalRail from "../components/OperationalRail";
 import { mockCameras, mockSystemMetrics } from "../data/mockData";
-import { Camera } from "../types";
+import { Camera, SystemMetrics } from "../types";
+import { api } from "../services/api";
 
 export default function Dashboard() {
+  const [cameraList, setCameraList] = useState<Camera[]>(mockCameras);
   const [selectedCam, setSelectedCam] = useState<Camera>(mockCameras[0]);
+  const [metrics, setMetrics] = useState<SystemMetrics>(mockSystemMetrics);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchDashboardData() {
+      try {
+        const [statsRes, camsRes] = await Promise.allSettled([
+          api.getStatistics(),
+          api.getCameras(),
+        ]);
+        if (!isMounted) return;
+
+        if (statsRes.status === "fulfilled" && statsRes.value) {
+          setMetrics(statsRes.value);
+        }
+        if (camsRes.status === "fulfilled" && camsRes.value && camsRes.value.length > 0) {
+          setCameraList(camsRes.value);
+          setSelectedCam((prev) => {
+            const found = camsRes.value.find((c) => c.id === prev.id);
+            return found || camsRes.value[0];
+          });
+        }
+      } catch (e) {
+        console.warn("Using fallback dashboard data:", e);
+      }
+    }
+    fetchDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <Layout
@@ -16,7 +49,7 @@ export default function Dashboard() {
     >
       <div className="space-y-5">
         {/* Top 5 Operational Summary Cards */}
-        <StatsStrip metrics={mockSystemMetrics} />
+        <StatsStrip metrics={metrics} />
 
         {/* Main Operational Area: Center Large CCTV Feed + Right Command Center Rail */}
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5 items-start">
@@ -37,12 +70,12 @@ export default function Dashboard() {
                   </h3>
                 </div>
                 <span className="text-[11px] text-navy-500 font-mono">
-                  Showing 4 of {mockCameras.length} Feeds
+                  Showing {Math.min(4, cameraList.length)} of {cameraList.length} Feeds
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {mockCameras.slice(0, 4).map((cam) => {
+                {cameraList.slice(0, 4).map((cam) => {
                   const isSelected = cam.id === selectedCam.id;
                   const isLive = cam.status === "ACTIVE";
                   const isAlert = cam.status === "ALERT";

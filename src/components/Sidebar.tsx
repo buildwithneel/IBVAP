@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   IconAnalysis,
@@ -10,10 +10,16 @@ import {
   IconReports,
 } from "./Icons";
 import { IBVAPLogo } from "./EmblemMark";
+import { mockOperator } from "../data/mockData";
+import { useOfficerProfile } from "../context/OfficerProfileContext";
+import { api } from "../services/api";
+import { wsService } from "../services/websocket";
 
-interface SidebarProps {
+export interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  showProfile?: boolean;
+  showOperatorProfile?: boolean;
 }
 
 const navItems = [
@@ -61,12 +67,40 @@ const navItems = [
   },
 ];
 
-export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
+export default function Sidebar({
+  isOpen = true,
+  onClose,
+  showProfile = false,
+  showOperatorProfile,
+}: SidebarProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { openProfile } = useOfficerProfile();
 
-  const handleLogout = () => {
-    navigate("/");
+  // Support prop-driven and query param-driven profile visibility
+  const urlProfileParam = searchParams.get("profile") ?? searchParams.get("showProfile");
+  const isProfileVisible =
+    urlProfileParam !== null
+      ? urlProfileParam === "true" || urlProfileParam === "1"
+      : showOperatorProfile !== undefined
+      ? showOperatorProfile
+      : showProfile;
+
+  const handleLogout = async () => {
+    try {
+      wsService.disconnect();
+      await api.logout();
+    } finally {
+      navigate("/");
+    }
   };
+
+  const initials = mockOperator.name
+    .split(" ")
+    .filter((w) => w.match(/^[A-Z]/))
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("");
 
   return (
     <>
@@ -88,7 +122,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
       {/* Sidebar container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-[220px] bg-navy-900 border-r border-navy-800/80 text-navy-100 flex flex-col transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-[220px] bg-navy-900 border-r border-navy-800/80 text-navy-100 flex flex-col transition-transform duration-200 ease-out lg:static lg:translate-x-0 h-full ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Operations Navigation"
@@ -116,7 +150,7 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           )}
         </div>
 
-        {/* Agency Subheading */}
+        {/* Agency Badge / Subheading */}
         <div className="px-4 py-2 bg-navy-950/50 border-b border-navy-800/50 shrink-0">
           <p className="text-[10px] font-semibold text-navy-400 uppercase tracking-widest">
             Ministry of Home Affairs
@@ -126,8 +160,8 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           </p>
         </div>
 
-        {/* Navigation list */}
-        <nav className="flex-1 py-3 px-2.5 space-y-1 overflow-y-auto" aria-label="Main navigation">
+        {/* Navigation */}
+        <nav className="py-3 px-2.5 space-y-1 overflow-y-auto" aria-label="Main navigation">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -135,7 +169,9 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 key={item.to}
                 to={item.to}
                 end={item.end}
-                onClick={() => { if (onClose) onClose(); }}
+                onClick={() => {
+                  if (onClose) onClose();
+                }}
                 className={({ isActive }) =>
                   `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
                     isActive
@@ -164,9 +200,12 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           })}
         </nav>
 
-        {/* Bottom Section — System Telemetry & End Session */}
-        <div className="border-t border-navy-800/80 bg-navy-950/50 p-2.5 space-y-2 shrink-0">
-          {/* Secure connection status */}
+        {/* Flexible spacer: pushes bottom area to the bottom */}
+        <div className="flex-1 min-h-0" aria-hidden="true" />
+
+        {/* Bottom area: contains Telemetry [ALWAYS] and Operator Profile [OPTIONAL] */}
+        <div className="mt-auto border-t border-navy-800/80 bg-navy-950/50 p-2.5 space-y-2 shrink-0">
+          {/* Telemetry footer [ALWAYS AVAILABLE] */}
           <div className="px-2.5 py-1.5 rounded-lg bg-navy-900/80 border border-navy-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-status-live animate-cctv-pulse shrink-0" />
@@ -177,16 +216,42 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
             <span className="text-[10px] font-mono text-navy-400">38ms</span>
           </div>
 
-          {/* End Terminal Session */}
-          <button
-            onClick={handleLogout}
-            title="End terminal session"
-            className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-navy-400 hover:text-status-critical hover:bg-navy-800/80 border border-transparent hover:border-navy-700/80 transition-colors cursor-pointer"
-            aria-label="Logout from terminal"
-          >
-            <IconLogout size={14} />
-            <span>End Session</span>
-          </button>
+          {/* Operator profile footer [OPTIONAL] */}
+          {isProfileVisible && (
+            <div className="px-2 py-1 flex items-center justify-between border-t border-navy-800/50 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  openProfile(mockOperator.name);
+                  if (onClose) onClose();
+                }}
+                className="flex items-center gap-2 min-w-0 group p-1 -m-1 rounded-lg hover:bg-navy-800/80 focus:outline-none focus:ring-1 focus:ring-navy-600 cursor-pointer transition-colors text-left"
+                title={`View operator profile for ${mockOperator.name}`}
+                aria-label={`View user profile for ${mockOperator.name}`}
+              >
+                <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 group-hover:border-navy-500 transition-colors">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-white truncate leading-tight group-hover:text-navy-100">
+                    {mockOperator.name}
+                  </p>
+                  <p className="text-[9px] text-navy-400 font-mono truncate leading-tight">
+                    {mockOperator.officerId}
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                title="End terminal session"
+                className="p-1.5 rounded-lg text-navy-400 hover:text-status-critical hover:bg-navy-800 transition-colors shrink-0 cursor-pointer"
+                aria-label="Logout from terminal"
+              >
+                <IconLogout size={14} />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>

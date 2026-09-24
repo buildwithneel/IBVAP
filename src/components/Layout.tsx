@@ -1,20 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import TopBar from "./TopBar";
+import { wsService } from "../services/websocket";
 
 interface LayoutProps {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
+  showProfile?: boolean;
+  showOperatorProfile?: boolean;
 }
 
-export default function Layout({ title, subtitle, children }: LayoutProps) {
+export default function Layout({
+  title,
+  subtitle,
+  children,
+  showProfile,
+  showOperatorProfile,
+}: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    wsService.connect();
+  }, []);
 
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-gov-bg text-navy-900">
       {/* Sidebar with responsive toggle */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        showProfile={showProfile}
+        showOperatorProfile={showOperatorProfile}
+      />
 
       {/* Main content body */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">

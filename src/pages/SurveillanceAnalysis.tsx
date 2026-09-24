@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
 import { mockBoundingBoxes, mockCameras, mockDetections } from "../data/mockData";
-import { DetectionItem } from "../types";
+import { Camera, DetectionItem } from "../types";
 import { IconAnalysis } from "../components/Icons";
 import StatusBadge from "../components/StatusBadge";
+import { api } from "../services/api";
 
 const typeStyle: Record<string, { badge: string; label: string }> = {
   breach:  { badge: "bg-status-critical text-white",                              label: "BREACH" },
@@ -15,19 +16,48 @@ const typeStyle: Record<string, { badge: string; label: string }> = {
 
 export default function SurveillanceAnalysis() {
   const navigate = useNavigate();
+  const [detections, setDetections] = useState<DetectionItem[]>(mockDetections);
+  const [cameraList, setCameraList] = useState<Camera[]>(mockCameras);
   const [selectedDetection, setSelectedDetection] = useState<DetectionItem>(mockDetections[0]);
   const [detectionFilter, setDetectionFilter] = useState<"ALL" | "person" | "vehicle" | "breach">("ALL");
   const [tripwireBreach, setTripwireBreach] = useState(false);
   const [timestamp, setTimestamp] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    async function loadAnalysisData() {
+      try {
+        const [detsRes, camsRes] = await Promise.allSettled([
+          api.getDetections(),
+          api.getCameras(),
+        ]);
+        if (!isMounted) return;
+
+        if (camsRes.status === "fulfilled" && camsRes.value && camsRes.value.length > 0) {
+          setCameraList(camsRes.value);
+        }
+        if (detsRes.status === "fulfilled" && detsRes.value && detsRes.value.length > 0) {
+          setDetections(detsRes.value);
+          setSelectedDetection(detsRes.value[0]);
+        }
+      } catch (e) {
+        console.warn("Using fallback surveillance analysis data:", e);
+      }
+    }
+    loadAnalysisData();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const activeCamera =
-    mockCameras.find((c) => c.id === selectedDetection.cameraId) || mockCameras[0];
+    cameraList.find((c) => c.id === selectedDetection.cameraId) || cameraList[0] || mockCameras[0];
   const activeBoxes = mockBoundingBoxes[activeCamera.id] || [];
 
   const filteredDetections =
     detectionFilter === "ALL"
-      ? mockDetections
-      : mockDetections.filter((d) => d.type === detectionFilter);
+      ? detections
+      : detections.filter((d) => d.type === detectionFilter);
 
   useEffect(() => {
     const update = () => {
