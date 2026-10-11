@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  ibvap-backend:
+    build: .
+    container_name: ibvap-backend-service
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://ibvap_user:ibvap_pass@postgres-db:5432/ibvap_db
+      - YOLO_MODEL_PATH=models/yolov8n.pt
+      - YOLO_DEVICE=cpu
+    volumes:
+      - ./storage:/app/storage
+      - ./models:/app/models
+    depends_on:
+      - postgres-db
+    restart: always
+
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: ibvap-postgres-db
+    environment:
+      POSTGRES_USER: ibvap_user
+      POSTGRES_PASSWORD: ibvap_pass
+      POSTGRES_DB: ibvap_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data:

@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,12 +9,13 @@ import {
   IconIntelligence,
   IconLogout,
   IconReports,
+  IconSettings,
 } from "./Icons";
 import { IBVAPLogo } from "./EmblemMark";
-import { mockOperator } from "../data/mockData";
 import { useOfficerProfile } from "../context/OfficerProfileContext";
 import { api } from "../services/api";
 import { wsService } from "../services/websocket";
+import { BackendUser } from "../types";
 
 export interface SidebarProps {
   isOpen?: boolean;
@@ -65,6 +67,13 @@ const navItems = [
     end: false,
     desc: "Anomaly patterns",
   },
+  {
+    label: "Settings",
+    to: "/dashboard/settings",
+    icon: IconSettings,
+    end: false,
+    desc: "CCTV & System Config",
+  },
 ];
 
 export default function Sidebar({
@@ -76,8 +85,26 @@ export default function Sidebar({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { openProfile } = useOfficerProfile();
+  const [user, setUser] = useState<BackendUser | null>(api.getStoredUser());
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Support prop-driven and query param-driven profile visibility
+  useEffect(() => {
+    setUser(api.getStoredUser());
+  }, []);
+
+  // Close user profile popover on click outside
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [userMenuOpen]);
+
   const urlProfileParam = searchParams.get("profile") ?? searchParams.get("showProfile");
   const isProfileVisible =
     urlProfileParam !== null
@@ -91,16 +118,17 @@ export default function Sidebar({
       wsService.disconnect();
       await api.logout();
     } finally {
-      navigate("/");
+      navigate("/login", { replace: true });
     }
   };
 
-  const initials = mockOperator.name
+  const displayName = user?.name || "Duty Officer";
+  const initials = displayName
     .split(" ")
-    .filter((w) => w.match(/^[A-Z]/))
+    .filter((w) => w.match(/^[A-Z]/i))
     .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
+    .map((w) => w[0].toUpperCase())
+    .join("") || "DO";
 
   return (
     <>
@@ -173,7 +201,7 @@ export default function Sidebar({
                   if (onClose) onClose();
                 }}
                 className={({ isActive }) =>
-                  `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition-colors duration-150 ${
+                  `group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors duration-150 ${
                     isActive
                       ? "bg-navy-800 text-white shadow-sm"
                       : "text-navy-300 hover:bg-navy-800/60 hover:text-navy-100"
@@ -182,7 +210,6 @@ export default function Sidebar({
               >
                 {({ isActive }) => (
                   <>
-                    {/* Active left bar indicator */}
                     {isActive && (
                       <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-status-info rounded-r animate-sidebar-indicator" />
                     )}
@@ -200,58 +227,163 @@ export default function Sidebar({
           })}
         </nav>
 
-        {/* Flexible spacer: pushes bottom area to the bottom */}
         <div className="flex-1 min-h-0" aria-hidden="true" />
 
-        {/* Bottom area: contains Telemetry [ALWAYS] and Operator Profile [OPTIONAL] */}
-        <div className="mt-auto border-t border-navy-800/80 bg-navy-950/50 p-2.5 space-y-2 shrink-0">
-          {/* Telemetry footer [ALWAYS AVAILABLE] */}
+        {/* Bottom area: USER / OPERATOR ACCOUNT ↓ SYSTEM API STATUS */}
+        <div className="mt-auto border-t border-navy-800/80 bg-navy-950/60 p-2.5 space-y-2 shrink-0 relative">
+          {/* USER / OPERATOR PROFILE MENU TRIGGER */}
+          <div ref={userMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between gap-2 p-2 rounded-lg bg-navy-900/90 hover:bg-navy-800 border border-navy-800 hover:border-navy-700 transition-all text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-navy-600 group"
+              aria-expanded={userMenuOpen}
+              aria-haspopup="true"
+              aria-label="User Account and Session Menu"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="relative shrink-0">
+                  <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white group-hover:border-navy-500 transition-colors">
+                    {initials}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-status-live border border-navy-900 animate-cctv-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-white truncate leading-tight group-hover:text-blue-300 transition-colors">
+                    {displayName}
+                  </p>
+                  <p className="text-[10px] text-navy-400 font-medium truncate leading-tight">
+                    {user?.role || "Operator"}
+                  </p>
+                </div>
+              </div>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`text-navy-400 group-hover:text-white transition-transform duration-200 shrink-0 ${
+                  userMenuOpen ? "rotate-180" : ""
+                }`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+
+            {/* Dropdown / Popover Menu */}
+            <AnimatePresence>
+              {userMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute bottom-full left-0 right-0 mb-1.5 bg-navy-900 border border-navy-700/90 rounded-xl shadow-2xl overflow-hidden z-50 divide-y divide-navy-800/80 text-[11px]"
+                >
+                  {/* Account Header */}
+                  <div className="px-3 py-2 bg-navy-950/80">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-navy-400">
+                      Operator Account
+                    </p>
+                    <p className="text-white font-medium truncate mt-0.5">
+                      {displayName}
+                    </p>
+                    <p className="text-[9px] text-navy-400 font-mono truncate">
+                      {user?.badgeNumber || user?.email || "Service ID: SSB-SEC-8421"}
+                    </p>
+                  </div>
+
+                  {/* Supported Navigation & Profile Actions */}
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        openProfile(displayName);
+                        if (onClose) onClose();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-navy-200 hover:text-white hover:bg-navy-800/90 transition-colors text-left cursor-pointer"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                      <span>Profile / Account</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate("/dashboard/user-details");
+                        if (onClose) onClose();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-navy-200 hover:text-white hover:bg-navy-800/90 transition-colors text-left cursor-pointer"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                        <line x1="8" y1="21" x2="16" y2="21" />
+                        <line x1="12" y1="17" x2="12" y2="21" />
+                      </svg>
+                      <span>Operator Details</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        navigate("/dashboard/settings");
+                        if (onClose) onClose();
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-navy-200 hover:text-white hover:bg-navy-800/90 transition-colors text-left cursor-pointer"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                      <span>Preferences / Settings</span>
+                    </button>
+                  </div>
+
+                  {/* System Status / Telemetry note */}
+                  <div className="px-3 py-1.5 bg-navy-950/40 flex items-center justify-between text-[10px]">
+                    <span className="text-navy-400">Node Gateway</span>
+                    <span className="font-semibold text-emerald-400">ONLINE</span>
+                  </div>
+
+                  {/* Distinct Destructive Logout Action */}
+                  <div className="p-1 bg-red-950/20">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-red-400 hover:text-white hover:bg-status-critical transition-colors text-left font-semibold cursor-pointer group"
+                    >
+                      <IconLogout size={13} className="text-red-400 group-hover:text-white transition-colors" />
+                      <span>Log Out Session</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Existing SYSTEM API STATUS (Preserved underneath user profile menu) */}
           <div className="px-2.5 py-1.5 rounded-lg bg-navy-900/80 border border-navy-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-status-live animate-cctv-pulse shrink-0" />
               <span className="text-[10px] font-semibold text-navy-300 uppercase tracking-wide">
-                Secure VPN
+                SYSTEM API
               </span>
             </div>
-            <span className="text-[10px] font-mono text-navy-400">38ms</span>
+            <span className="text-[10px] font-semibold text-navy-400">ONLINE</span>
           </div>
-
-          {/* Operator profile footer [OPTIONAL] */}
-          {isProfileVisible && (
-            <div className="px-2 py-1 flex items-center justify-between border-t border-navy-800/50 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  openProfile(mockOperator.name);
-                  if (onClose) onClose();
-                }}
-                className="flex items-center gap-2 min-w-0 group p-1 -m-1 rounded-lg hover:bg-navy-800/80 focus:outline-none focus:ring-1 focus:ring-navy-600 cursor-pointer transition-colors text-left"
-                title={`View operator profile for ${mockOperator.name}`}
-                aria-label={`View user profile for ${mockOperator.name}`}
-              >
-                <div className="w-6 h-6 rounded-md bg-navy-700 border border-navy-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0 group-hover:border-navy-500 transition-colors">
-                  {initials}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-white truncate leading-tight group-hover:text-navy-100">
-                    {mockOperator.name}
-                  </p>
-                  <p className="text-[9px] text-navy-400 font-mono truncate leading-tight">
-                    {mockOperator.officerId}
-                  </p>
-                </div>
-              </button>
-
-              <button
-                onClick={handleLogout}
-                title="End terminal session"
-                className="p-1.5 rounded-lg text-navy-400 hover:text-status-critical hover:bg-navy-800 transition-colors shrink-0 cursor-pointer"
-                aria-label="Logout from terminal"
-              >
-                <IconLogout size={14} />
-              </button>
-            </div>
-          )}
         </div>
       </aside>
     </>

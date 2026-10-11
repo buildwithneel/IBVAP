@@ -67,7 +67,7 @@ export function InstitutionalEmblem({
   );
 }
 
-import logoImg from "../assets/ibvap-logo.png";
+import logoImg from "../assets/ibvap-logo-transparent.png";
 
 export function IBVAPLogo({
   className = "",
@@ -87,7 +87,7 @@ export function IBVAPLogo({
       <img
         src={logoImg}
         alt="IBVAP — Surveillance System (Safer Borders | Stronger India)"
-        className={`${heightClasses} w-auto max-w-[200px] object-contain select-none mix-blend-screen`}
+        className={`${heightClasses} w-auto max-w-[200px] object-contain select-none`}
       />
     </div>
   );

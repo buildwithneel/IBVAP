@@ -30,10 +30,10 @@ export default function OfficerProfileDrawer() {
 
   const initials = activeOfficer.name
     .split(" ")
-    .filter((w) => w.match(/^[A-Z]/))
+    .filter((w) => w.match(/^[A-Z]/i))
     .slice(0, 2)
-    .map((w) => w[0])
-    .join("");
+    .map((w) => w[0].toUpperCase())
+    .join("") || "DO";
 
   const permissions = activeOfficer.permissions || [
     { label: "Live Optical CCTV Feed Monitoring (All Sectors)", status: "Granted" as const },
@@ -45,12 +45,7 @@ export default function OfficerProfileDrawer() {
   ];
 
   const sessionLog = activeOfficer.sessionLog || [
-    { time: "07:12:03", action: "Terminal Authentication", status: "OK" as const },
-    { time: "07:12:15", action: "RTSP Stream Handshake — All Sectors", status: "OK" as const },
-    { time: "07:15:48", action: "Tripwire Calibration — Sector 3", status: "OK" as const },
-    { time: "08:22:11", action: "Acknowledged Alert: ALT-2024-4221", status: "ACK" as const },
-    { time: "09:04:37", action: "Incident Dossier Generated: RPT-2024-0004", status: "OK" as const },
-    { time: "09:45:00", action: "Sector 1 Camera Offline — Auto-Diagnostic Triggered", status: "WARN" as const },
+    { time: new Date().toLocaleTimeString("en-IN"), action: "Terminal Authentication", status: "OK" as const },
   ];
 
   return (
@@ -62,7 +57,7 @@ export default function OfficerProfileDrawer() {
           aria-modal="true"
           aria-label={`Officer Security Dossier: ${activeOfficer.name}`}
         >
-          {/* Backdrop (clicking outside closes the panel) */}
+          {/* Backdrop */}
           <motion.div
             key="drawer-backdrop"
             initial={{ opacity: 0 }}
@@ -100,9 +95,6 @@ export default function OfficerProfileDrawer() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[9px] px-2 py-0.5 rounded font-semibold bg-navy-200/80 text-navy-700 uppercase">
-                  DEMO PROTOTYPE
-                </span>
                 <button
                   type="button"
                   onClick={closeProfile}
@@ -116,14 +108,6 @@ export default function OfficerProfileDrawer() {
                   </svg>
                 </button>
               </div>
-            </div>
-
-            {/* Prototype Notice Banner */}
-            <div className="px-4 py-2 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-[10px] flex items-center gap-2 shrink-0">
-              <span className="font-semibold text-amber-800 uppercase shrink-0">Prototype Record</span>
-              <span className="text-amber-700 leading-tight">
-                Synthetic operational profile for hackathon demonstration. Not an actual government record.
-              </span>
             </div>
 
             {/* Drawer Body — Scrollable */}
@@ -209,46 +193,10 @@ export default function OfficerProfileDrawer() {
                       {activeOfficer.status || "Active"}
                     </span>
                   </div>
-
-                  <div className="col-span-2 bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Current Assignment</span>
-                    <span className="font-semibold text-navy-900 text-[11px]">
-                      {activeOfficer.assignment || "Border Surveillance Operations"}
-                    </span>
-                  </div>
-
-                  <div className="bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Session Status</span>
-                    <span className="font-mono font-semibold text-navy-900 text-[11px]">
-                      {activeOfficer.sessionStatus || "Active"}
-                    </span>
-                  </div>
-
-                  <div className="bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Last Activity</span>
-                    <span className="font-mono text-navy-700 text-[10px]">
-                      {activeOfficer.lastActivity || "Current session"}
-                    </span>
-                  </div>
-
-                  <div className="col-span-2 bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Deployment Station</span>
-                    <span className="font-semibold text-navy-900 text-[11px]">{activeOfficer.deploymentStation}</span>
-                  </div>
-
-                  <div className="bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Shift Duty Started</span>
-                    <span className="font-mono text-navy-800 text-[11px]">{activeOfficer.loginTime}</span>
-                  </div>
-
-                  <div className="bg-gov-card p-2 rounded-lg border border-navy-200/80">
-                    <span className="text-navy-400 block text-[9px] uppercase font-semibold">Intercom / Ext</span>
-                    <span className="font-mono text-navy-800 text-[11px]">{activeOfficer.contactExtension}</span>
-                  </div>
                 </div>
               </div>
 
-              {/* Assigned Terminal Capabilities Matrix */}
+              {/* Capabilities Matrix */}
               <div className="bg-gov-card rounded-xl border border-navy-200 p-4 shadow-gov space-y-2.5">
                 <div className="flex items-center justify-between border-b border-navy-100 pb-2">
                   <h4 className="text-[10px] font-semibold uppercase tracking-wider text-navy-800">
@@ -300,7 +248,7 @@ export default function OfficerProfileDrawer() {
                     Shift Activity Log
                   </h4>
                   <span className="text-[9px] font-mono text-navy-500">
-                    IP: {activeOfficer.activeSessionIp.split(" ")[0]}
+                    IP: {activeOfficer.activeSessionIp}
                   </span>
                 </div>
 

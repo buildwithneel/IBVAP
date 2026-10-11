@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "../components/Layout";
-import { mockCameras } from "../data/mockData";
 import { Camera, CameraStatus, BackendCameraCreatePayload, BackendCameraUpdatePayload } from "../types";
-import { IconFilter, IconSearch, IconAlertTriangle } from "../components/Icons";
+import { IconFilter, IconSearch, IconAlertTriangle, IconVideo, IconPlay, IconSquare } from "../components/Icons";
 import StatusBadge from "../components/StatusBadge";
 import EmptyState from "../components/EmptyState";
 import Modal from "../components/Modal";
+import TestStreamingModal from "../components/TestStreamingModal";
+import { VirtualFenceManager } from "../components/VirtualFenceManager";
 import { api } from "../services/api";
 
 const statusCounts = (cameras: Camera[]) => ({
@@ -14,6 +15,7 @@ const statusCounts = (cameras: Camera[]) => ({
   ACTIVE: cameras.filter((c) => c.status === "ACTIVE").length,
   ALERT: cameras.filter((c) => c.status === "ALERT").length,
   OFFLINE: cameras.filter((c) => c.status === "OFFLINE").length,
+  NOT_CONNECTED: cameras.filter((c) => c.status === "NOT_CONNECTED").length,
   MAINTENANCE: cameras.filter((c) => c.status === "MAINTENANCE").length,
 });
 
@@ -43,11 +45,14 @@ export default function Cameras() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | CameraStatus>("ALL");
-  const [cameraList, setCameraList] = useState<Camera[]>(mockCameras);
+  const [cameraList, setCameraList] = useState<Camera[]>([]);
   const [_isLoading, setIsLoading] = useState(true);
 
   // Form & Modal States
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [isFenceModalOpen, setIsFenceModalOpen] = useState(false);
+  const [selectedFenceCameraId, setSelectedFenceCameraId] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingCameraId, setEditingCameraId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CameraFormData>(initialFormData);
@@ -67,30 +72,39 @@ export default function Cameras() {
     }, 4500);
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadFleet() {
-      try {
-        setIsLoading(true);
-        const [cams] = await Promise.all([
-          api.getCameras(),
-          api.getCameraHealth(),
-        ]);
-        if (!isMounted) return;
+  const [testStreamingStatus, setTestStreamingStatus] = useState<{ is_streaming: boolean; active_count: number }>({
+    is_streaming: false,
+    active_count: 0,
+  });
 
-        if (cams && cams.length > 0) {
-          setCameraList(cams);
-        }
-      } catch (e) {
-        console.warn("Using fallback fleet data:", e);
-      } finally {
-        if (isMounted) setIsLoading(false);
+  const loadFleet = async () => {
+    try {
+      setIsLoading(true);
+      const cams = await api.getCameras();
+      if (cams) {
+        setCameraList(cams);
       }
+    } catch (e) {
+      console.warn("Error loading fleet data:", e);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const fetchStreamingStatus = async () => {
+    try {
+      const status = await api.getTestStreamingStatus();
+      setTestStreamingStatus(status);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
     loadFleet();
-    return () => {
-      isMounted = false;
-    };
+    fetchStreamingStatus();
+    const interval = setInterval(fetchStreamingStatus, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const counts = statusCounts(cameraList);
@@ -112,7 +126,7 @@ export default function Cameras() {
     setFormData({
       ...initialFormData,
       name: "",
-      location: `BP-${Math.floor(1000 + Math.random() * 9000)}`,
+      location: "BP-01",
     });
     setIsFormModalOpen(true);
   };
@@ -205,7 +219,6 @@ export default function Cameras() {
         ? "offline"
         : targetStatus.toLowerCase();
 
-    // Optimistic update of local table
     setCameraList((prev) =>
       prev.map((c) => (c.id === camId ? { ...c, status: targetStatus } : c))
     );
@@ -252,16 +265,17 @@ export default function Cameras() {
         )}
 
         {/* Fleet Health Summary Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {[
             { label: "Active", value: counts.ACTIVE, color: "text-status-live", bg: "bg-status-liveBg border-status-live/20" },
+            { label: "Offline", value: counts.OFFLINE, color: "text-rose-600", bg: "bg-rose-50 border-rose-200" },
+            { label: "Not Connected", value: counts.NOT_CONNECTED, color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
             { label: "Alert", value: counts.ALERT, color: "text-status-critical", bg: "bg-status-criticalBg border-status-critical/20" },
-            { label: "Offline", value: counts.OFFLINE, color: "text-navy-600", bg: "bg-navy-100 border-navy-200" },
             { label: "Maintenance", value: counts.MAINTENANCE, color: "text-status-warn", bg: "bg-status-warnBg border-status-warn/20" },
           ].map((s) => (
             <div key={s.label} className={`rounded-xl border p-3 shadow-gov ${s.bg}`}>
               <p className="text-[10px] font-semibold text-navy-500 uppercase tracking-wide">{s.label}</p>
-              <p className={`text-2xl font-bold font-mono mt-1 ${s.color}`}>
+              <p className={`text-2xl font-bold mt-1 ${s.color}`}>
                 {s.value.toString().padStart(2, "0")}
               </p>
             </div>
@@ -293,7 +307,7 @@ export default function Cameras() {
                 <IconFilter size={12} />
                 Status:
               </span>
-              {(["ALL", "ACTIVE", "ALERT", "OFFLINE", "MAINTENANCE"] as const).map((status) => (
+              {(["ALL", "ACTIVE", "OFFLINE", "NOT_CONNECTED", "ALERT", "MAINTENANCE"] as const).map((status) => (
                 <button
                   key={status}
                   onClick={() => setStatusFilter(status)}
@@ -308,11 +322,49 @@ export default function Cameras() {
               ))}
             </div>
 
+            {/* Simulated Test Streaming Action */}
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold border transition-colors ${
+                  testStreamingStatus.is_streaming
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : "bg-navy-50 border-navy-200 text-navy-600"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    testStreamingStatus.is_streaming ? "bg-emerald-600 animate-pulse" : "bg-navy-400"
+                  }`}
+                />
+                <span>{testStreamingStatus.is_streaming ? `Streaming (${testStreamingStatus.active_count})` : "Stopped"}</span>
+              </span>
+              <button
+                onClick={() => setIsTestModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-100 hover:bg-navy-200 border border-navy-300 text-navy-900 text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+                title="Simulate CCTV video feeds from local files"
+              >
+                <IconVideo size={13} />
+                <span>{testStreamingStatus.is_streaming ? "Manage Test Streams" : "Start Test Streaming"}</span>
+              </button>
+            </div>
+
+            {/* Virtual Fencing Action */}
+            <button
+              onClick={() => setIsFenceModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold shadow-xs transition-colors shrink-0 cursor-pointer"
+              title="Configure Virtual Fencing & Tripwires"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
+              <span>Virtual Fencing</span>
+            </button>
+
             {/* Add Camera Action */}
             <button
               onClick={handleOpenAdd}
               id="add-camera-btn"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-white text-xs font-semibold shadow-sm transition-colors shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-900 hover:bg-navy-800 text-white text-xs font-semibold shadow-sm transition-colors shrink-0 cursor-pointer"
               title="Register new camera"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -345,8 +397,8 @@ export default function Cameras() {
                   <tr>
                     <td colSpan={8}>
                       <EmptyState
-                        title="No cameras match the selected filters"
-                        description="Try adjusting your search term or selecting a different status filter."
+                        title="No cameras found"
+                        description="There are currently 0 cameras matching the selected filters. Use 'Add Camera' to register a new unit."
                         icon={
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
                         }
@@ -368,15 +420,21 @@ export default function Cameras() {
                           <span className="font-mono font-bold text-navy-900 bg-navy-100 border border-navy-200 px-2 py-0.5 rounded text-[11px]">
                             {cam.code}
                           </span>
-                          <span className="text-[10px] text-navy-400 font-mono">{cam.postNumber}</span>
+                          <span className="text-[10px] text-navy-400 font-medium">{cam.postNumber}</span>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-navy-900">{cam.name}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-navy-900">{cam.name}</span>
+                          {cam.isSimulated && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-600 border border-amber-500/30">
+                              TEST STREAM
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-navy-400 mt-0.5">{cam.sector}</div>
                       </td>
                       <td className="py-3 px-4 whitespace-nowrap">
-                        {/* Interactive Status Modification preserving exact StatusBadge appearance */}
                         <div className="relative inline-flex items-center group" title="Click to modify camera status">
                           <StatusBadge status={cam.status} />
                           <select
@@ -390,17 +448,6 @@ export default function Cameras() {
                             <option value="MAINTENANCE">MAINTENANCE</option>
                             <option value="ALERT">ALERT</option>
                           </select>
-                          <svg
-                            className="w-2.5 h-2.5 ml-1 text-navy-400 group-hover:text-navy-700 transition-colors pointer-events-none"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
                         </div>
                       </td>
                       <td className="py-3 px-4 font-mono text-navy-600 whitespace-nowrap text-[11px]">
@@ -430,10 +477,23 @@ export default function Cameras() {
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
+                            onClick={() => {
+                              setSelectedFenceCameraId(cam.id);
+                              setIsFenceModalOpen(true);
+                            }}
+                            className="px-2 py-0.5 rounded bg-emerald-800 hover:bg-emerald-700 text-white text-[10px] font-semibold transition-colors flex items-center gap-1 shadow-2xs"
+                            title={`Configure Virtual Fence & AI Boundaries for ${cam.name}`}
+                          >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            </svg>
+                            <span>Fence</span>
+                          </button>
+                          <button
                             onClick={() => navigate("/dashboard/feed")}
                             className="px-2 py-0.5 rounded bg-navy-100 hover:bg-navy-200 text-navy-700 text-[10px] font-medium border border-navy-200 transition-colors"
                           >
-                            Live Feed
+                            Feed
                           </button>
                           <button
                             onClick={() => navigate("/dashboard/analysis")}
@@ -441,7 +501,6 @@ export default function Cameras() {
                           >
                             Analyse
                           </button>
-                          {/* Edit Action */}
                           <button
                             onClick={() => handleOpenEdit(cam)}
                             className="px-2 py-0.5 rounded bg-navy-100 hover:bg-navy-200 text-navy-700 text-[10px] font-medium border border-navy-200 transition-colors"
@@ -449,7 +508,6 @@ export default function Cameras() {
                           >
                             Edit
                           </button>
-                          {/* Delete Action */}
                           <button
                             onClick={() => setDeletingCamera(cam)}
                             className="px-2 py-0.5 rounded bg-status-criticalBg/40 hover:bg-status-criticalBg text-status-critical text-[10px] font-medium border border-status-critical/30 transition-colors"
@@ -466,9 +524,9 @@ export default function Cameras() {
             </table>
           </div>
           {filteredCameras.length > 0 && (
-            <div className="px-4 py-2 bg-navy-50 border-t border-navy-200 flex items-center justify-between text-[10px] text-navy-400 font-mono">
+            <div className="px-4 py-2 bg-navy-50 border-t border-navy-200 flex items-center justify-between text-[10px] text-navy-500 font-medium">
               <span>Showing {filteredCameras.length} of {cameraList.length} perimeter surveillance units</span>
-              <span>ONVIF Profile S/T · RTP/RTSP · AES-256</span>
+              <span><span className="font-mono text-navy-600">ONVIF Profile S/T</span> · <span className="font-mono text-navy-600">RTP/RTSP</span> · <span className="font-mono text-navy-600">AES-256</span></span>
             </div>
           )}
         </div>
@@ -488,7 +546,6 @@ export default function Cameras() {
       >
         <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Name */}
             <div className="sm:col-span-2">
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Camera Name / Station Label *
@@ -503,7 +560,6 @@ export default function Cameras() {
               />
             </div>
 
-            {/* Stream URL */}
             <div className="sm:col-span-2">
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Stream URL / Ingestion URI *
@@ -518,7 +574,6 @@ export default function Cameras() {
               />
             </div>
 
-            {/* Source Type */}
             <div>
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Source Type
@@ -534,7 +589,6 @@ export default function Cameras() {
               </select>
             </div>
 
-            {/* Sector */}
             <div>
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Operational Sector *
@@ -548,11 +602,9 @@ export default function Cameras() {
                 <option value="Sector Bravo">Sector Bravo (Valley Defile)</option>
                 <option value="Sector Charlie">Sector Charlie (Riverine Crossing)</option>
                 <option value="Sector Delta">Sector Delta (Eastern Ridge)</option>
-                <option value="Sector Echo">Sector Echo (Southern Scrublands)</option>
               </select>
             </div>
 
-            {/* Location / Post */}
             <div>
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Border Post / Location Code
@@ -561,12 +613,11 @@ export default function Cameras() {
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g. BP-8421"
+                placeholder="e.g. BP-01"
                 className="w-full px-3 py-2 text-xs rounded-lg border border-navy-300 bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
               />
             </div>
 
-            {/* Target FPS */}
             <div>
               <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
                 Target FPS
@@ -580,49 +631,8 @@ export default function Cameras() {
                 className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-navy-300 bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
               />
             </div>
-
-            {/* Latitude */}
-            <div>
-              <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
-                GPS Latitude
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={formData.latitude}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    latitude: e.target.value === "" ? "" : parseFloat(e.target.value),
-                  })
-                }
-                placeholder="34.0837"
-                className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-navy-300 bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
-              />
-            </div>
-
-            {/* Longitude */}
-            <div>
-              <label className="block text-[11px] font-semibold text-navy-700 uppercase tracking-wider mb-1">
-                GPS Longitude
-              </label>
-              <input
-                type="number"
-                step="any"
-                value={formData.longitude}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    longitude: e.target.value === "" ? "" : parseFloat(e.target.value),
-                  })
-                }
-                placeholder="74.7973"
-                className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-navy-300 bg-white text-navy-900 focus:outline-none focus:ring-2 focus:ring-navy-900/20 focus:border-navy-900 transition-colors"
-              />
-            </div>
           </div>
 
-          {/* Modal Actions */}
           <div className="pt-4 border-t border-navy-200 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -661,7 +671,7 @@ export default function Cameras() {
                 Decommission {deletingCamera?.name} ({deletingCamera?.code})?
               </p>
               <p className="text-[11px] text-navy-600 mt-1 leading-relaxed">
-                This action will immediately terminate optical telemetry and disconnect the real-time AI analytics stream from the sector monitoring matrix.
+                This action will immediately terminate optical telemetry and disconnect the real-time AI analytics stream.
               </p>
             </div>
           </div>
@@ -686,6 +696,40 @@ export default function Cameras() {
           </div>
         </div>
       </Modal>
+
+      {/* Test Streaming Modal */}
+      <TestStreamingModal
+        isOpen={isTestModalOpen}
+        onClose={() => setIsTestModalOpen(false)}
+        cameras={cameraList}
+        onStreamStarted={async () => {
+          await loadFleet();
+          await fetchStreamingStatus();
+          setIsTestModalOpen(false);
+        }}
+        onStreamStopped={async () => {
+          await loadFleet();
+          await fetchStreamingStatus();
+          setIsTestModalOpen(false);
+        }}
+      />
+
+      {/* Virtual Fencing Modal */}
+      {isFenceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-navy-950/80 backdrop-blur-sm">
+          <div className="w-full max-w-6xl h-[90vh] rounded-2xl overflow-hidden shadow-2xl border border-navy-700">
+            <VirtualFenceManager
+              cameras={cameraList}
+              initialCameraId={selectedFenceCameraId || editingCameraId || cameraList[0]?.id}
+              onClose={() => {
+                setIsFenceModalOpen(false);
+                setSelectedFenceCameraId(null);
+                loadFleet();
+              }}
+            />
+          </div>
+        </div>
+      )}
     </Layout>
   );
 }

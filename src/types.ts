@@ -1,4 +1,4 @@
-export type CameraStatus = "ACTIVE" | "OFFLINE" | "MAINTENANCE" | "ALERT";
+export type CameraStatus = "ACTIVE" | "OFFLINE" | "MAINTENANCE" | "ALERT" | "NOT_CONNECTED";
 
 export interface Camera {
   id: string;
@@ -11,9 +11,65 @@ export interface Camera {
   resolution: string;
   fps: number;
   ipAddress: string;
+  port?: number;
+  sourceType?: string;
+  isSimulated?: boolean;
+  videoUrl?: string;
+  username?: string;
+  substreamUrl?: string;
+  enabled?: boolean;
   lastHeartbeat: string;
   personsActive: number;
   vehiclesActive: number;
+  ptz_supported?: boolean;
+  ptz_service_url?: string;
+  thermal_capable?: boolean;
+  night_vision_mode?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface TestStreamVideo {
+  id: string;
+  filename: string;
+  name: string;
+  file_path: string;
+  stream_url: string;
+  size_bytes: number;
+  size_formatted: string;
+  format: string;
+  is_compatible: boolean;
+  resolution: string;
+  fps: number;
+  camera_id?: string;
+  camera_name?: string;
+  camera_status?: string;
+  is_streaming?: boolean;
+}
+
+export interface TestStreamStatus {
+  is_streaming: boolean;
+  status: "STREAMING" | "STOPPED" | "ERROR";
+  active_count: number;
+  active_streams: any[];
+  available_videos_count: number;
+  total_simulated_cameras?: number;
+}
+
+export interface StartTestStreamPayload {
+  video_id?: string;
+  file_path?: string;
+  camera_id?: string;
+  camera_name?: string;
+  sector?: string;
+  location?: string;
+  loop?: boolean;
+  all?: boolean;
+}
+
+export interface StopTestStreamPayload {
+  camera_id?: string;
+  all?: boolean;
 }
 
 export type DetectionType = "person" | "vehicle" | "object" | "breach";
@@ -50,11 +106,16 @@ export interface SecurityAlert {
   description: string;
   cameraId: string;
   cameraCode: string;
+  cameraName?: string;
   sector: string;
   severity: AlertSeverity;
   timestamp: string;
   status: "unresolved" | "investigating" | "resolved";
   assignedUnit?: string;
+  plateNumber?: string;
+  plateImageUrl?: string;
+  snapshotUrl?: string;
+  evidenceStatus?: "SUCCESS" | "FAILED" | "PENDING" | string;
 }
 
 export interface IncidentReport {
@@ -66,9 +127,20 @@ export interface IncidentReport {
   generatedAt: string;
   reportingOfficer: string;
   classification: "Restricted" | "Confidential" | "Secret";
-  status: "Filed" | "Under Review" | "Closed";
+  status: "Filed" | "Under Review" | "Closed" | "ACTIVE" | "ACKNOWLEDGED" | "ESCALATED" | "RESOLVED";
   summary: string;
   detectionsCount: number;
+  eventId?: string;
+  evidenceId?: string;
+  sha256?: string;
+  cameraId?: string;
+  cameraName?: string;
+  eventType?: string;
+  severity?: string;
+  snapshotUrl?: string;
+  plateImageUrl?: string;
+  plateNumber?: string;
+  evidenceStatus?: string;
 }
 
 export interface IntelligenceItem {
@@ -158,9 +230,18 @@ export interface BackendCameraResponse {
   status: string;
   sector: string;
   location?: string;
+  ip_address?: string;
+  port?: number;
+  username?: string;
+  substream_url?: string;
+  enabled?: boolean;
   latitude?: number;
   longitude?: number;
   fps?: number;
+  ptz_supported?: boolean;
+  ptz_service_url?: string;
+  thermal_capable?: boolean;
+  night_vision_mode?: string;
   created_at?: string;
   updated_at?: string;
   last_seen_at?: string;
@@ -172,6 +253,12 @@ export interface BackendCameraCreatePayload {
   source_type?: string;
   sector: string;
   location?: string;
+  ip_address?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  substream_url?: string;
+  enabled?: boolean;
   latitude?: number;
   longitude?: number;
   fps?: number;
@@ -183,9 +270,69 @@ export interface BackendCameraUpdatePayload {
   source_type?: string;
   sector?: string;
   location?: string;
+  ip_address?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  substream_url?: string;
+  enabled?: boolean;
+  status?: string;
   latitude?: number;
   longitude?: number;
   fps?: number;
+}
+
+export interface CameraTestConnectionRequest {
+  source_type?: string;
+  stream_url?: string;
+  ip_address?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+}
+
+export interface CameraTestConnectionResponse {
+  success: boolean;
+  reachable: boolean;
+  message: string;
+  resolution?: string;
+  fps?: number;
+  latency_ms?: number;
+  protocol?: string;
+}
+
+export interface DiscoveredCamera {
+  ip: string;
+  port: number;
+  xaddrs: string;
+  types: string;
+  manufacturer?: string;
+  model?: string;
+  suggested_stream_url: string;
+}
+
+export interface CameraDiscoveryResponse {
+  discovered: DiscoveredCamera[];
+  total: number;
+  message: string;
+  scanned_at: string;
+}
+
+export interface GeneralSettings {
+  appName: string;
+  stationNodeId: string;
+  defaultLayout: "2x2" | "3x3" | "focus";
+  telemetryRefreshSeconds: number;
+  lowLightHud: boolean;
+  audioAlerts: boolean;
+}
+
+export interface RecordingStorageSettings {
+  storagePath: string;
+  retentionDays: number;
+  hashVerificationAuto: boolean;
+  snapshotQuality: "standard" | "high";
+  maxStorageAllocationGb: number;
 }
 
 export interface BackendCameraListResponse {
@@ -244,6 +391,13 @@ export interface BackendEventResponse {
   extra_data?: any;
   camera_name?: string;
   sector?: string;
+  plate_number?: string;
+  plate_image_url?: string;
+  snapshot_url?: string;
+  evidence_status?: string;
+  evidence_id?: string;
+  evidence?: any;
+  event_hash?: string;
 }
 
 export interface BackendDetectionRecord {
@@ -313,11 +467,22 @@ export interface BackendIncidentDetail {
 
 export interface BackendEvidenceItem {
   id: string;
-  incident_id: string;
-  evidence_type: "snapshot" | "video_clip" | string;
-  file_path: string;
-  sha256_hash: string;
-  timestamp: string;
+  incident_id?: string;
+  event_id?: string;
+  evidence_type?: "snapshot" | "video_clip" | string;
+  file_path?: string;
+  image_path?: string;
+  plate_image_path?: string;
+  plate_image_url?: string;
+  video_path?: string;
+  snapshot_url?: string;
+  sha256_hash?: string;
+  sha256?: string;
+  plate_sha256?: string;
+  capture_status?: "SUCCESS" | "FAILED" | "PENDING" | string;
+  file_size_bytes?: number;
+  timestamp?: string;
+  created_at?: string;
   url?: string;
 }
 
@@ -365,3 +530,89 @@ export interface CameraDiagnostics {
   last_ping: string;
 }
 
+// ==========================================
+// PTZ CONTROL TYPES
+// ==========================================
+
+export interface PtzCapabilitiesResponse {
+  camera_id: string;
+  camera_name?: string;
+  ptz_supported: boolean;
+  is_simulated_viewport: boolean;
+  ptz_service_url?: string;
+  presets_supported: boolean;
+  continuous_move_supported: boolean;
+  relative_move_supported: boolean;
+  stop_supported: boolean;
+  speed_range: {
+    min: number;
+    max: number;
+    default: number;
+  };
+  message?: string;
+}
+
+export interface PtzMoveRequest {
+  pan?: number;   // -1.0 to 1.0 (left/right)
+  tilt?: number;  // -1.0 to 1.0 (down/up)
+  zoom?: number;  // -1.0 to 1.0 (out/in)
+  speed?: number; // 0.1 to 1.0
+  timeout?: number;
+}
+
+export interface PtzPreset {
+  token: string;
+  name: string;
+}
+
+export interface PtzPresetsResponse {
+  camera_id: string;
+  presets: PtzPreset[];
+}
+
+export interface PtzActionResponse {
+  status: string;
+  camera_id: string;
+  action: string;
+  is_simulated_viewport: boolean;
+  message?: string;
+}
+
+// ==========================================
+// THERMAL IMAGING TYPES
+// ==========================================
+
+export interface ThermalStatusResponse {
+  camera_id: string;
+  camera_name?: string;
+  thermal_capable: boolean;
+  thermal_mode: "off" | "ironbow" | "rainbow" | "white_hot" | "black_hot";
+  radiometric: boolean;
+  is_simulated: boolean;
+  description: string;
+  temperature_support: boolean;
+}
+
+export interface ThermalConfigRequest {
+  enabled: boolean;
+  colormap?: "ironbow" | "rainbow" | "white_hot" | "black_hot";
+}
+
+// ==========================================
+// NIGHT VISION & IR TYPES
+// ==========================================
+
+export interface NightVisionStatusResponse {
+  camera_id: string;
+  camera_name?: string;
+  mode: "auto" | "day" | "night" | "low_light_enhancement";
+  ir_filter_state: "day" | "night" | "auto" | "unknown";
+  hardware_ir_supported: boolean;
+  digital_enhancement_active: boolean;
+  is_simulated: boolean;
+  description: string;
+}
+
+export interface NightVisionConfigRequest {
+  mode: "auto" | "day" | "night" | "low_light_enhancement";
+}

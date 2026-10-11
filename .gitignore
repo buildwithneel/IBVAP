@@ -1,34 +1,131 @@
-# Logs
-logs
+# ==============================================================================
+# IBVAP Repository .gitignore
+# Intelligent Video Analytics Platform for Border Surveillance
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Environment & Secrets
+# ------------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.env
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+# Credentials & Key Files
+*.pem
+*.key
+*.crt
+credentials.json
+service-account.json
+secrets.json
+id_rsa
+id_ed25519
+
+# ------------------------------------------------------------------------------
+# 2. Dependencies & Package Managers
+# ------------------------------------------------------------------------------
+node_modules/
+dist/
+dist-ssr/
+build/
+.next/
+out/
+coverage/
+
+# ------------------------------------------------------------------------------
+# 3. Python & Virtual Environments
+# ------------------------------------------------------------------------------
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# ------------------------------------------------------------------------------
+# 4. Testing & Code Quality Caches
+# ------------------------------------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ------------------------------------------------------------------------------
+# 5. Local Databases
+# ------------------------------------------------------------------------------
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+backend/ibvap.db
+backend/storage/*.db
+backend/storage/ibvap.db
+
+# ------------------------------------------------------------------------------
+# 6. Generated Media, Evidence & Test Uploads
+# ------------------------------------------------------------------------------
+backend/storage/evidence/*
+!backend/storage/evidence/.gitkeep
+backend/storage/uploads/*
+!backend/storage/uploads/.gitkeep
+backend/storage/reports/*
+!backend/storage/reports/.gitkeep
+/evidence/
+/recordings/
+/generated/
+
+# ------------------------------------------------------------------------------
+# 7. Logs & Runtime Temporary Files
+# ------------------------------------------------------------------------------
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.tmp/
+temp/
+tmp/
+.cache/
+pids/
+*.pid
 
-# Dependencies
-node_modules/
-
-# Production build
-dist/
-dist-ssr/
-
-# Local env files
-*.local
-.env
-.env.*.local
-
-# Editor directories and files
+# ------------------------------------------------------------------------------
+# 8. Editor & IDE Settings
+# ------------------------------------------------------------------------------
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
+*.swp
+*.swo
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
 
-# TypeScript build info
-*.tsbuildinfo
+# ------------------------------------------------------------------------------
+# 9. Operating System Artifacts
+# ------------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ------------------------------------------------------------------------------
+# 10. AI Agent & Development Assistants
+# ------------------------------------------------------------------------------
+.agents/
+.gemini/
+.claude/
+.cursor/
+.windsurf/
+.copilot/
+

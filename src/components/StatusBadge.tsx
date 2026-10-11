@@ -4,6 +4,7 @@ type StatusVariant =
   | "ACTIVE"
   | "ALERT"
   | "OFFLINE"
+  | "NOT_CONNECTED"
   | "MAINTENANCE"
   | "critical"
   | "warning"
@@ -44,6 +45,13 @@ const variantMap: Record<
     text: "text-navy-500",
     border: "border-navy-300",
     dot: "bg-navy-400",
+  },
+  NOT_CONNECTED: {
+    bg: "bg-slate-100 dark:bg-navy-800/40",
+    text: "text-slate-600 dark:text-navy-400",
+    border: "border-slate-300 dark:border-navy-600",
+    dot: "bg-slate-400 dark:bg-navy-500",
+    label: "NOT CONNECTED",
   },
   MAINTENANCE: {
     bg: "bg-status-warnBg",

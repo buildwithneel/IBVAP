@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { OperatorProfile } from "../types";
-import { getOfficerProfile, mockOperator } from "../data/mockData";
+import { api } from "../services/api";
 
 interface OfficerProfileContextType {
   isOpen: boolean;
@@ -16,12 +16,37 @@ export function OfficerProfileProvider({ children }: { children: ReactNode }) {
   const [activeOfficer, setActiveOfficer] = useState<OperatorProfile | null>(null);
 
   const openProfile = useCallback((nameOrProfile?: string | OperatorProfile) => {
-    if (!nameOrProfile) {
-      setActiveOfficer(mockOperator);
-    } else if (typeof nameOrProfile === "string") {
-      setActiveOfficer(getOfficerProfile(nameOrProfile));
-    } else {
+    const user = api.getStoredUser();
+
+    if (typeof nameOrProfile === "object" && nameOrProfile !== null) {
       setActiveOfficer(nameOrProfile);
+    } else {
+      const name = typeof nameOrProfile === "string" ? nameOrProfile : user?.name || "Duty Officer";
+      setActiveOfficer({
+        name,
+        officerId: user?.badgeNumber || "SSB-SEC-8421",
+        designation: user?.role || "Duty Officer",
+        role: user?.role || "Border Surveillance Operator",
+        organization: "Sashastra Seema Bal (SSB)",
+        forceUnit: user?.unit || "Border Security Force",
+        deploymentStation: "Sector Alpha Command Terminal",
+        clearanceLevel: "Level-3 (Restricted Surveillance)",
+        status: "Active",
+        assignment: "Perimeter Optical Monitoring",
+        sessionStatus: "Authenticated",
+        lastActivity: "Active Session",
+        activeSessionIp: "10.142.1.88",
+        loginTime: new Date().toLocaleTimeString("en-IN"),
+        lastAuditDate: new Date().toISOString().slice(0, 10),
+        contactExtension: "Ext. 4100",
+        permissions: (user?.permissions || ["view_feeds", "acknowledge_alerts"]).map((p) => ({
+          label: p.toUpperCase().replace(/_/g, " "),
+          status: "Granted" as const,
+        })),
+        sessionLog: [
+          { time: new Date().toLocaleTimeString("en-IN"), action: "Terminal Authentication", status: "OK" as const },
+        ],
+      });
     }
     setIsOpen(true);
   }, []);

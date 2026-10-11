@@ -43,14 +43,13 @@ export default {
       },
       fontFamily: {
         sans: [
-          "Inter",
+          '"Noto Sans"',
           '"Segoe UI"',
-          "-apple-system",
-          "BlinkMacSystemFont",
           "Arial",
           "sans-serif",
         ],
         mono: [
+          '"IBM Plex Mono"',
           '"SFMono-Regular"',
           "Consolas",
           '"Liberation Mono"',

@@ -32,6 +32,7 @@ class WebSocketService {
   private statusListeners: Set<(status: WsConnectionStatus) => void> = new Set();
   private alertListeners: Set<(alert: SecurityAlert) => void> = new Set();
   private detectionListeners: Set<(detection: DetectionItem) => void> = new Set();
+  private messageListeners: Set<(payload: WsMessagePayload) => void> = new Set();
 
   public getStatus(): WsConnectionStatus {
     return this.status;
@@ -60,6 +61,11 @@ class WebSocketService {
     return () => this.detectionListeners.delete(listener);
   }
 
+  public subscribeMessage(listener: (payload: WsMessagePayload) => void): () => void {
+    this.messageListeners.add(listener);
+    return () => this.messageListeners.delete(listener);
+  }
+
   public connect(): void {
     // Prevent duplicate active connections
     if (
@@ -71,7 +77,7 @@ class WebSocketService {
     }
 
     this.setStatus("connecting");
-    const wsUrl = `${WS_BASE_URL}/api/v1/ws`;
+    const wsUrl = `${WS_BASE_URL}/ws`;
 
     try {
       this.socket = new WebSocket(wsUrl);
@@ -109,7 +115,6 @@ class WebSocketService {
       this.reconnectTimeoutId = null;
     }
     if (this.socket) {
-      // Remove event handlers to prevent reconnect loop during intentional close
       this.socket.onopen = null;
       this.socket.onclose = null;
       this.socket.onerror = null;
@@ -125,7 +130,7 @@ class WebSocketService {
     this.pingIntervalId = setInterval(() => {
       if (this.socket && this.socket.readyState === WebSocket.OPEN) {
         try {
-          this.socket.send(JSON.stringify({ type: "ping" }));
+          this.socket.send("ping");
         } catch {
           // Socket might have closed
         }
@@ -169,7 +174,6 @@ class WebSocketService {
   }
 
   private handleMessage(data: string): void {
-    // 1. Text pongs
     if (data === "pong" || data === "PONG") {
       return;
     }
@@ -178,37 +182,50 @@ class WebSocketService {
     try {
       payload = JSON.parse(data);
     } catch {
-      // Non-JSON message e.g. "CONNECTED"
       if (data.includes("CONNECTED")) {
         this.setStatus("connected");
       }
       return;
     }
 
-    // 2. Pong payloads
     if (payload.type === "pong" || payload.type === "PONG") {
       return;
     }
 
-    // 3. Connection acknowledgment
     if (payload.type === "CONNECTED") {
       this.setStatus("connected");
       return;
     }
 
-    // 4. Handle Alert Events (alert.new or SURVEILLANCE_EVENT)
-    if (payload.type === "alert.new" || payload.type === "SURVEILLANCE_EVENT") {
-      const rawEvent = payload.event || payload.alert || payload;
-      const eventId = rawEvent.id || `evt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    this.messageListeners.forEach((listener) => {
+      try {
+        listener(payload);
+      } catch (err) {
+        console.warn("Error in ws message listener:", err);
+      }
+    });
 
-      if (this.isDuplicate(eventId)) {
-        return; // Prevent duplicate events
+    // Handle Alert / Event broadcast from FastAPI backend
+    if (
+      payload.type === "alert.new" ||
+      payload.type === "SURVEILLANCE_EVENT" ||
+      payload.type === "alert.updated" ||
+      payload.type === "alert.resolved" ||
+      payload.type === "alert.status_changed" ||
+      payload.event_type
+    ) {
+      const rawEvent = payload.event || payload.alert || payload.payload || payload;
+      const eventId = rawEvent.id || rawEvent.event_id || `evt-${Date.now()}`;
+
+      if (payload.type === "alert.new" || payload.type === "SURVEILLANCE_EVENT") {
+        if (this.isDuplicate(eventId)) {
+          return;
+        }
       }
 
       const alert = this.normalizeAlert(rawEvent, eventId);
       this.alertListeners.forEach((listener) => listener(alert));
 
-      // If payload also contains detection details, broadcast to detection log
       if (rawEvent.detection || rawEvent.bbox || rawEvent.class_name) {
         const detection = this.normalizeDetection(rawEvent.detection || rawEvent);
         this.detectionListeners.forEach((listener) => listener(detection));
@@ -222,32 +239,51 @@ class WebSocketService {
     if (s === "critical" || s === "high") severity = "critical";
     else if (s === "medium" || s === "warn") severity = "warning";
 
+    let status: SecurityAlert["status"] = "unresolved";
+    const rawStatus = (ev.status || "").toLowerCase();
+    if (rawStatus === "resolved") status = "resolved";
+    else if (rawStatus === "acknowledged" || rawStatus === "investigating" || rawStatus === "under_review") status = "investigating";
+
     const timestamp = ev.timestamp
       ? new Date(ev.timestamp).toLocaleTimeString("en-IN", {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
         })
-      : new Date().toLocaleTimeString("en-IN", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-        });
+      : new Date().toLocaleTimeString("en-IN");
+
+    const rawPlateImg = ev.plate_image_url || ev.extra_data?.plate_image_url || ev.evidence?.plate_image_url || ev.plate_image_path;
+    const rawSnapImg = ev.snapshot_url || ev.image_path || ev.extra_data?.snapshot_url;
+    const plateNum = ev.plate_number || ev.extra_data?.plate_number;
+    const evStatus = ev.evidence_status || ev.extra_data?.evidence_status || (rawPlateImg || rawSnapImg ? "SUCCESS" : undefined);
+
+    const httpUrl = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000";
+    const cleanBase = httpUrl.replace(/\/api(\/v1)?\/?$/, "").replace(/\/$/, "");
+    const resolveUrl = (u?: string | null) => {
+      if (!u) return undefined;
+      if (u.startsWith("http://") || u.startsWith("https://") || u.startsWith("data:")) return u;
+      const c = u.replace(/\\/g, "/");
+      return c.startsWith("/") ? `${cleanBase}${c}` : `${cleanBase}/${c}`;
+    };
 
     return {
       id,
-      code: ev.code || `ALT-${new Date().getFullYear()}-${id.slice(-4).toUpperCase()}`,
+      code: ev.code || `ALT-${id.slice(-4).toUpperCase()}`,
       title: ev.title || `${(ev.event_type || "Surveillance").toUpperCase()} DETECTED`,
       description:
         ev.description ||
-        `Live automated perimeter trigger on camera ${ev.camera_id || "CAM-01"}.`,
+        `Real-time surveillance event on camera ${ev.camera_id || "CAM-01"}.`,
       cameraId: ev.camera_id || "cam-01",
       cameraCode: ev.camera_name || `CAM-${(ev.camera_id || "01").slice(-4).toUpperCase()}`,
       sector: ev.sector || "Sector Alpha",
       severity,
       timestamp,
-      status: "unresolved",
-      assignedUnit: "48th Bn QRT",
+      status,
+      assignedUnit: "Border Patrol QRT",
+      plateNumber: plateNum,
+      plateImageUrl: resolveUrl(rawPlateImg),
+      snapshotUrl: resolveUrl(rawSnapImg),
+      evidenceStatus: evStatus,
     };
   }
 
@@ -267,18 +303,14 @@ class WebSocketService {
       type = "breach";
 
     return {
-      id: det.id || `det-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: det.id || `det-${Date.now()}`,
       cameraId: det.camera_id || "cam-01",
       cameraCode: det.camera_code || "CAM-01",
       sector: det.sector || "Sector Alpha",
       type,
       label: `${(det.class_name || type).toUpperCase()}${det.track_id ? ` #${det.track_id}` : ""}`,
       confidence: det.confidence || 0.88,
-      timestamp: new Date().toLocaleTimeString("en-IN", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }),
+      timestamp: new Date().toLocaleTimeString("en-IN"),
       severity: type === "breach" ? "critical" : det.confidence > 0.8 ? "normal" : "warn",
       details: det.track_id ? `ByteTrack Target #${det.track_id}` : undefined,
     };

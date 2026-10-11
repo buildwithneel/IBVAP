@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   html,
@@ -12,8 +11,12 @@
   }
 
   body {
-    @apply bg-gov-bg text-navy-900 font-sans antialiased;
+    background-color: #F4F6F8;
+    color: #0F172A;
+    font-family: "Noto Sans", "Segoe UI", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
     color-scheme: light;
+    transition: background-color 200ms ease, color 200ms ease;
   }
 
   /* Accessible focus indicators */
@@ -21,6 +24,148 @@
     outline: 2px solid #1E293B;
     outline-offset: 2px;
   }
+}
+
+/* ─── Tactical Dark Mode System ──────────────────────── */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #090D16;
+  color: #F1F5F9;
+}
+
+/* Primary tactical backgrounds */
+html.dark .bg-gov-bg {
+  background-color: #090D16 !important;
+}
+
+html.dark .bg-gov-card {
+  background-color: #121A29 !important;
+  border-color: #1F2E45 !important;
+}
+
+html.dark .bg-gov-subtle {
+  background-color: #151F31 !important;
+}
+
+/* Structural Navy Scale for Dark Mode */
+html.dark .bg-navy-50 {
+  background-color: #162235 !important;
+}
+
+html.dark .bg-navy-100 {
+  background-color: #1C2B42 !important;
+}
+
+html.dark .bg-navy-100\/70,
+html.dark .bg-navy-100\/80 {
+  background-color: rgba(28, 43, 66, 0.75) !important;
+}
+
+html.dark .bg-navy-200 {
+  background-color: #243550 !important;
+}
+
+html.dark .bg-white {
+  background-color: #141C2B !important;
+}
+
+/* Text Contrast Corrections in Dark Mode */
+html.dark .text-navy-950,
+html.dark .text-navy-900 {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-navy-800 {
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-navy-700 {
+  color: #E2E8F0 !important;
+}
+
+html.dark .text-navy-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-navy-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark .text-navy-400 {
+  color: #718096 !important;
+}
+
+/* Border Hierarchy in Dark Mode */
+html.dark .border-navy-100 {
+  border-color: #182335 !important;
+}
+
+html.dark .border-navy-200,
+html.dark .border-navy-200\/60,
+html.dark .border-navy-200\/70,
+html.dark .border-navy-200\/80 {
+  border-color: #1F2E45 !important;
+}
+
+html.dark .border-navy-300 {
+  border-color: #2A3C59 !important;
+}
+
+/* Table & Divider Rules in Dark Mode */
+html.dark :where(.divide-navy-100 > :not(:last-child)) {
+  border-color: #182335 !important;
+}
+
+html.dark :where(.divide-navy-200 > :not(:last-child)) {
+  border-color: #1F2E45 !important;
+}
+
+/* Form Controls & Inputs in Dark Mode */
+html.dark input[type="text"],
+html.dark input[type="password"],
+html.dark input[type="search"],
+html.dark input[type="number"],
+html.dark input[type="email"],
+html.dark select,
+html.dark textarea {
+  background-color: #141C2B !important;
+  color: #F8FAFC !important;
+  border-color: #243550 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748B !important;
+}
+
+/* Elevated Shadow in Dark Mode */
+html.dark .shadow-gov {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+html.dark .shadow-govMd {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .shadow-govLg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Dark scrollbars */
+html.dark ::-webkit-scrollbar-track {
+  background: #090D16;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1F2E45;
+  border-radius: 3px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #2D4161;
 }
 
 /* ─── Page transitions ───────────────────────────────── */

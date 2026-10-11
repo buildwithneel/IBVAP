@@ -50,7 +50,7 @@ function MetricCard({
           <span className="w-2 h-2 rounded-full bg-status-critical animate-cctv-pulse" />
         </div>
         <div className="mt-2 flex items-baseline justify-between">
-          <span className="text-2xl font-bold font-mono text-status-critical tracking-tight">
+          <span className="text-2xl font-bold text-status-critical tracking-tight">
             {typeof value === "number" ? value.toString().padStart(2, "0") : value}
           </span>
           {secondary && (
@@ -70,7 +70,7 @@ function MetricCard({
         {badge ?? (icon && <div className="p-1 rounded bg-navy-100 text-navy-600">{icon}</div>)}
       </div>
       <div className="mt-2.5 flex items-baseline justify-between">
-        <span className="text-2xl font-bold font-mono text-navy-900 tracking-tight">
+        <span className="text-2xl font-bold text-navy-900 tracking-tight">
           {typeof value === "number" ? value.toString().padStart(2, "0") : value}
         </span>
         {secondary && (
