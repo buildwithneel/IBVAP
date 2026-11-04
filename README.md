@@ -46,7 +46,22 @@ Traditional border monitoring faces operational challenges: remote geographical 
 - Enforces user-defined and AI-assisted geospatial perimeter boundaries (virtual fences and tripwires).
 - Automatically captures forensic evidence snapshots and video clips sealed with SHA-256 cryptographic hashes.
 - Maintains a tamper-evident audit ledger recording every operational decision and system action.
+## 🏆 Smart India Hackathon 2026 (SIH 2026)
 
+**IBVAP (Integrated Border Video Analytics Platform)** is a project developed as part of **Smart India Hackathon 2026 (SIH 2026)**.
+
+The project focuses on developing an AI-powered border surveillance and video analytics platform to support intelligent perimeter monitoring, real-time threat detection, multi-camera surveillance, and evidence management.
+
+### Project Highlights
+- AI-powered real-time object detection using YOLOv8.
+- Multi-camera surveillance and centralized monitoring.
+- Intelligent virtual fencing and intrusion detection.
+- Automated incident evidence capture and verification.
+- Geospatial monitoring and tactical command interface.
+
+**Project:** Integrated Border Video Analytics Platform (IBVAP)  
+**Hackathon:** Smart India Hackathon 2026  
+**Domain:** Artificial Intelligence, Computer Vision & Border Surveillance
 ---
 
 ## Key Features
